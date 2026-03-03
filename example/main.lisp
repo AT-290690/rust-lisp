@@ -1,1 +1,1 @@
-(write! "./test.txt" "hello world")
+(+ 1 2)
