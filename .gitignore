@@ -23,3 +23,10 @@ target
 #.idea/
 
 dist
+src
+scripts
+miscs
+pkg
+lisp
+example
+ai
