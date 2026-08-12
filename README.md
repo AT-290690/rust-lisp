@@ -1,3 +1,5 @@
+
+
 # Que Script
 
 **A pocket lisp that gives you safety without verbosity**
@@ -7,7 +9,7 @@ _This repo contains the website of this project. It's to avoid website update co
 - **[Lisp](<https://en.wikipedia.org/wiki/Lisp_(programming_language)>)**
 - **[Stack-based bytecode Virtual Machine](https://en.wikipedia.org/wiki/Stack_machine)**
 - **[Standard library](https://en.wikipedia.org/wiki/Standard_library)**
-- **[Tree-shaking](https://en.wikipedia.org/wiki/Tree_shaking)** of Standard Libary
+- **[Tree-shaking](https://en.wikipedia.org/wiki/Tree_shaking)** of Standard Library
 - **[Strictly evaluated](https://en.wikipedia.org/wiki/Evaluation_strategy)**
 - Everything is an **[Expression](<https://en.wikipedia.org/wiki/Expression_(computer_science)>)**
 - **[Syntactic sugar](https://en.wikipedia.org/wiki/Syntactic_sugar)** layer
