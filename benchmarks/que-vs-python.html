@@ -1,0 +1,1447 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Que Cross-Language Benchmark</title>
+ <style>
+  :root {
+    --bg: #0f1115;
+    --panel: #161a21;
+    --ink: #e8e6e3;
+    --muted: #a6a09a;
+    --line: #2a2f3a;
+    --accent: #7aa2f7;
+  }
+
+  body {
+    margin: 0;
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    background:
+      radial-gradient(circle at top left, #1a1f2b 0, transparent 40rem),
+      linear-gradient(180deg, #0c0e12 0%, var(--bg) 100%);
+    color: var(--ink);
+  }
+
+  main {
+    max-width: 1500px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  h1, h2, h3 {
+    margin: 0 0 12px;
+    font-family: "Baskerville", "Times New Roman", serif;
+    color: #f5f3f0;
+    letter-spacing: 0.3px;
+  }
+
+  p {
+    margin: 0 0 16px;
+    color: var(--muted);
+  }
+
+  .meta, .summary, .workload {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 18px;
+    padding: 20px 22px;
+    box-shadow: 
+      0 10px 30px rgba(0, 0, 0, 0.4),
+      inset 0 1px 0 rgba(255,255,255,0.02);
+    margin-bottom: 22px;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 14px;
+  }
+
+  th, td {
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--line);
+    text-align: left;
+  }
+
+  .rank-cell {
+    width: 52px;
+    color: var(--muted);
+    font-variant-numeric: tabular-nums;
+  }
+
+  th {
+    color: var(--muted);
+    font-weight: 600;
+  }
+
+  th button {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    font-weight: inherit;
+    padding: 0;
+    cursor: pointer;
+    transition: color 0.2s ease;
+  }
+
+  th button:hover {
+    color: var(--accent);
+  }
+
+  th button.active {
+    color: var(--accent);
+  }
+
+  .sort-indicator {
+    display: inline-block;
+    min-width: 1.2em;
+    color: var(--line);
+  }
+
+  th button.active .sort-indicator {
+    color: var(--accent);
+  }
+
+  .chart {
+    width: 100%;
+    height: auto;
+    display: block;
+    background: #11151c;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    margin-top: 10px;
+  }
+
+  .label {
+    fill: var(--ink);
+    font-size: 13px;
+  }
+
+  .value {
+    fill: var(--muted);
+    font-size: 13px;
+  }
+
+  .chart-block {
+    margin-top: 16px;
+  }
+
+  .size-table-wrap {
+    margin-top: 18px;
+  }
+
+  .source-link {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: var(--accent);
+    font: inherit;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 0.15em;
+    transition: color 0.2s ease;
+  }
+
+  .source-link:hover {
+    color: #a6c8ff;
+  }
+
+  .source-dialog {
+    width: min(1280px, calc(100vw - 32px));
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    padding: 0;
+    background: var(--panel);
+    color: var(--ink);
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.7);
+  }
+
+  .source-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.65);
+  }
+
+  .source-dialog-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 18px 22px 8px;
+  }
+
+  .source-close {
+    appearance: none;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: #1c212b;
+    color: var(--ink);
+    font: inherit;
+    padding: 8px 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .source-close:hover {
+    background: #242a36;
+    border-color: #3a4150;
+  }
+
+  .source-dialog p {
+    padding: 0 22px;
+    margin-bottom: 12px;
+    word-break: break-all;
+  }
+
+  pre {
+    margin: 0 22px 22px;
+    padding: 16px 18px;
+    overflow: auto;
+    background: #11151c;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+  }
+
+  code {
+    font-family: "SFMono-Regular", Menlo, Consolas, monospace;
+    font-size: 0.95em;
+  }
+</style>
+</head>
+<body>
+  <main>
+    <section class="meta">
+      <h1>Que Cross-Language Benchmark</h1>
+      <p>Finite compute-only variants of selected top-level Que programs.</p>
+      <p>Generated: <code>2026-08-21T21:28:13.977264+00:00</code></p>
+      <p>Repeat: <code>5</code>, Warmup: <code>1</code>, RSS sample interval: <code>10 ms</code></p>
+    </section>
+    <section class="summary">
+      <h2>Average Across Workloads</h2>
+      <p>Per-language average of median wall time and median peak RSS across all workloads in this report.</p>
+      <section class="chart-block"><h3>Average Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Average Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="18.57" height="18" rx="4" fill="#1b6b6f"></rect><text x="270.57" y="54" class="value">42.02 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">1719.38 ms</text></svg></section>
+      <section class="chart-block"><h3>Average Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Average Median Peak RSS"><text x="12" y="54" class="label">1. Python</text><rect x="240" y="40" width="655.31" height="18" rx="4" fill="#285f8f"></rect><text x="907.31" y="54" class="value">16.54 MiB</text><text x="12" y="86" class="label">2. Que</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#1b6b6f"></rect><text x="1012.00" y="86" class="value">19.18 MiB</text></svg></section>
+    </section>
+    <section class="summary">
+      <h2>Summary</h2>
+      <p>Sorted by best median wall time by default. Click a column header to re-sort.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th><button type="button" data-sort-key="1" data-sort-type="text">Workload <span class="sort-indicator">↕</span></button></th>
+            <th><button type="button" data-sort-key="2" data-sort-type="text">Language <span class="sort-indicator">↕</span></button></th>
+            <th><button type="button" data-sort-key="3" data-sort-type="number" data-default-sort="asc">Median Wall (ms) <span class="sort-indicator">↑</span></button></th>
+            <th><button type="button" data-sort-key="4" data-sort-type="number">Median Peak RSS (MiB) <span class="sort-indicator">↕</span></button></th>
+            <th><button type="button" data-sort-key="5" data-sort-type="number">Source Size (KiB) <span class="sort-indicator">↕</span></button></th>
+            <th><button type="button" data-sort-key="6" data-sort-type="number">Artifact Size (KiB) <span class="sort-indicator">↕</span></button></th>
+            <th><button type="button" data-sort-key="7" data-sort-type="text">Checksum <span class="sort-indicator">↕</span></button></th>
+          </tr>
+        </thead>
+        <tbody id="summary-body">
+          <tr><td class="rank-cell"></td><td data-sort-value="sum-1m">sum-1m</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-sum-1m-que">Que</button></td><td data-sort-value="8.047792">8.05</td><td data-sort-value="12.109375">12.11</td><td data-sort-value="0.136719">0.14</td><td data-sort-value="86.023438">86.02</td><td data-sort-value="465000">465000</td></tr><tr><td class="rank-cell"></td><td data-sort-value="reverse-complement">reverse-complement</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-reverse-complement-que">Que</button></td><td data-sort-value="9.550125">9.55</td><td data-sort-value="15.890625">15.89</td><td data-sort-value="0.858398">0.86</td><td data-sort-value="86.140625">86.14</td><td data-sort-value="99912507">99912507</td></tr><tr><td class="rank-cell"></td><td data-sort-value="sieve">sieve</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-sieve-que">Que</button></td><td data-sort-value="18.556250">18.56</td><td data-sort-value="27.750000">27.75</td><td data-sort-value="0.674805">0.67</td><td data-sort-value="86.093750">86.09</td><td data-sort-value="41538525">41538525</td></tr><tr><td class="rank-cell"></td><td data-sort-value="mandel">mandel</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-mandel-que">Que</button></td><td data-sort-value="23.313708">23.31</td><td data-sort-value="12.109375">12.11</td><td data-sort-value="1.742188">1.74</td><td data-sort-value="86.031250">86.03</td><td data-sort-value="41951779">41951779</td></tr><tr><td class="rank-cell"></td><td data-sort-value="sum-1m">sum-1m</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-sum-1m-python">Python</button></td><td data-sort-value="38.951792">38.95</td><td data-sort-value="14.437500">14.44</td><td data-sort-value="0.323242">0.32</td><td data-sort-value=""></td><td data-sort-value="465000">465000</td></tr><tr><td class="rank-cell"></td><td data-sort-value="n-queens">n-queens</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-n-queens-que">Que</button></td><td data-sort-value="45.170875">45.17</td><td data-sort-value="12.125000">12.12</td><td data-sort-value="1.406250">1.41</td><td data-sort-value="86.617188">86.62</td><td data-sort-value="29209979">29209979</td></tr><tr><td class="rank-cell"></td><td data-sort-value="fib-naive">fib-naive</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-fib-naive-que">Que</button></td><td data-sort-value="49.319833">49.32</td><td data-sort-value="12.125000">12.12</td><td data-sort-value="0.135742">0.14</td><td data-sort-value="86.078125">86.08</td><td data-sort-value="9227465">9227465</td></tr><tr><td class="rank-cell"></td><td data-sort-value="donut">donut</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-donut-que">Que</button></td><td data-sort-value="52.219375">52.22</td><td data-sort-value="12.125000">12.12</td><td data-sort-value="3.148438">3.15</td><td data-sort-value="86.281250">86.28</td><td data-sort-value="55696114">55696114</td></tr><tr><td class="rank-cell"></td><td data-sort-value="gof-glider">gof-glider</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-gof-glider-que">Que</button></td><td data-sort-value="75.853417">75.85</td><td data-sort-value="54.375000">54.38</td><td data-sort-value="2.048828">2.05</td><td data-sort-value="86.617188">86.62</td><td data-sort-value="44626902">44626902</td></tr><tr><td class="rank-cell"></td><td data-sort-value="ttt-minimax">ttt-minimax</td><td data-sort-value="Que"><button type="button" class="source-link" data-source-target="source-ttt-minimax-que">Que</button></td><td data-sort-value="96.130584">96.13</td><td data-sort-value="14.031250">14.03</td><td data-sort-value="3.709961">3.71</td><td data-sort-value="86.601562">86.60</td><td data-sort-value="77348958">77348958</td></tr><tr><td class="rank-cell"></td><td data-sort-value="sieve">sieve</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-sieve-python">Python</button></td><td data-sort-value="100.628916">100.63</td><td data-sort-value="29.796875">29.80</td><td data-sort-value="0.685547">0.69</td><td data-sort-value=""></td><td data-sort-value="41538525">41538525</td></tr><tr><td class="rank-cell"></td><td data-sort-value="reverse-complement">reverse-complement</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-reverse-complement-python">Python</button></td><td data-sort-value="120.236875">120.24</td><td data-sort-value="15.421875">15.42</td><td data-sort-value="0.780273">0.78</td><td data-sort-value=""></td><td data-sort-value="99912507">99912507</td></tr><tr><td class="rank-cell"></td><td data-sort-value="n-queens">n-queens</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-n-queens-python">Python</button></td><td data-sort-value="390.888083">390.89</td><td data-sort-value="14.578125">14.58</td><td data-sort-value="1.116211">1.12</td><td data-sort-value=""></td><td data-sort-value="29209979">29209979</td></tr><tr><td class="rank-cell"></td><td data-sort-value="fib-naive">fib-naive</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-fib-naive-python">Python</button></td><td data-sort-value="582.889417">582.89</td><td data-sort-value="14.468750">14.47</td><td data-sort-value="0.257812">0.26</td><td data-sort-value=""></td><td data-sort-value="9227465">9227465</td></tr><tr><td class="rank-cell"></td><td data-sort-value="ttt-minimax">ttt-minimax</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-ttt-minimax-python">Python</button></td><td data-sort-value="1357.467625">1357.47</td><td data-sort-value="14.953125">14.95</td><td data-sort-value="2.887695">2.89</td><td data-sort-value=""></td><td data-sort-value="77348958">77348958</td></tr><tr><td class="rank-cell"></td><td data-sort-value="mandel">mandel</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-mandel-python">Python</button></td><td data-sort-value="1763.367292">1763.37</td><td data-sort-value="14.875000">14.88</td><td data-sort-value="1.749023">1.75</td><td data-sort-value=""></td><td data-sort-value="41951779">41951779</td></tr><tr><td class="rank-cell"></td><td data-sort-value="donut">donut</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-donut-python">Python</button></td><td data-sort-value="2757.070208">2757.07</td><td data-sort-value="15.078125">15.08</td><td data-sort-value="2.927734">2.93</td><td data-sort-value=""></td><td data-sort-value="55696114">55696114</td></tr><tr><td class="rank-cell"></td><td data-sort-value="gof-glider">gof-glider</td><td data-sort-value="Python"><button type="button" class="source-link" data-source-target="source-gof-glider-python">Python</button></td><td data-sort-value="8362.933208">8362.93</td><td data-sort-value="15.250000">15.25</td><td data-sort-value="1.922852">1.92</td><td data-sort-value=""></td><td data-sort-value="44626902">44626902</td></tr>
+        </tbody>
+      </table>
+    </section>
+    <section class="workload"><h2>Sum / 1M Inclusive</h2><p>Inclusive sum of integers 1..1,000,000 with a bounded accumulator to respect Que i32.</p><p><strong>Stress:</strong> 1,000,000 inclusive additions.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="157.02" height="18" rx="4" fill="#1b6b6f"></rect><text x="409.02" y="54" class="value">8.05 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">38.95 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="637.45" height="18" rx="4" fill="#1b6b6f"></rect><text x="889.45" y="54" class="value">12.11 MiB</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">14.44 MiB</text></svg></section></section><section class="workload"><h2>Tic-Tac-Toe / Minimax</h2><p>Pure compute-only minimax over fixed tic-tac-toe boards derived from ttt-minimax.que.</p><p><strong>Stress:</strong> 3,000 outer iterations over 6 fixed boards, full minimax per board.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="53.82" height="18" rx="4" fill="#1b6b6f"></rect><text x="305.82" y="54" class="value">96.13 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">1357.47 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="713.15" height="18" rx="4" fill="#1b6b6f"></rect><text x="965.15" y="54" class="value">14.03 MiB</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">14.95 MiB</text></svg></section></section><section class="workload"><h2>Fibonacci / Naive Recursion</h2><p>Naive recursive Fibonacci derived from the provided Que snippet.</p><p><strong>Stress:</strong> Naive recursion with n = 35.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="64.31" height="18" rx="4" fill="#1b6b6f"></rect><text x="316.31" y="54" class="value">49.32 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">582.89 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="636.89" height="18" rx="4" fill="#1b6b6f"></rect><text x="888.89" y="54" class="value">12.12 MiB</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">14.47 MiB</text></svg></section></section><section class="workload"><h2>N-Queens</h2><p>Recursive backtracking solver derived from n-queens.que.</p><p><strong>Stress:</strong> Solve 12-queens with full backtracking search.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="87.83" height="18" rx="4" fill="#1b6b6f"></rect><text x="339.83" y="54" class="value">45.17 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">390.89 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="632.11" height="18" rx="4" fill="#1b6b6f"></rect><text x="884.11" y="54" class="value">12.12 MiB</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">14.58 MiB</text></svg></section></section><section class="workload"><h2>Game of Life / Gliders</h2><p>Finite toroidal simulation derived from my-gof.que.</p><p><strong>Stress:</strong> 1,200 simulation steps on a 96x96 toroidal board.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="6.89" height="18" rx="4" fill="#1b6b6f"></rect><text x="258.89" y="54" class="value">75.85 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">8362.93 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Python</text><rect x="240" y="40" width="213.15" height="18" rx="4" fill="#285f8f"></rect><text x="465.15" y="54" class="value">15.25 MiB</text><text x="12" y="86" class="label">2. Que</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#1b6b6f"></rect><text x="1012.00" y="86" class="value">54.38 MiB</text></svg></section></section><section class="workload"><h2>Mandelbrot Zoom</h2><p>Fixed-point Mandelbrot frames derived from mandel.que.</p><p><strong>Stress:</strong> 80 frames at 100x36 with max iteration count 64.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="10.05" height="18" rx="4" fill="#1b6b6f"></rect><text x="262.05" y="54" class="value">23.31 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">1763.37 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="618.70" height="18" rx="4" fill="#1b6b6f"></rect><text x="870.70" y="54" class="value">12.11 MiB</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">14.88 MiB</text></svg></section></section><section class="workload"><h2>ASCII Donut</h2><p>Fixed-point donut frames derived from fast-donut.que.</p><p><strong>Stress:</strong> 160 animation frames using an 80x25 buffer.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="14.39" height="18" rx="4" fill="#1b6b6f"></rect><text x="266.39" y="54" class="value">52.22 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">2757.07 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="611.15" height="18" rx="4" fill="#1b6b6f"></rect><text x="863.15" y="54" class="value">12.12 MiB</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">15.08 MiB</text></svg></section></section><section class="workload"><h2>Reverse Complement</h2><p>Generated DNA reverse-complement checksum over an in-memory base buffer.</p><p><strong>Stress:</strong> 1,000,000 generated DNA bases, reversed and complemented with a bounded checksum.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="60.36" height="18" rx="4" fill="#1b6b6f"></rect><text x="312.36" y="54" class="value">9.55 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">120.24 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Python</text><rect x="240" y="40" width="737.58" height="18" rx="4" fill="#285f8f"></rect><text x="989.58" y="54" class="value">15.42 MiB</text><text x="12" y="86" class="label">2. Que</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#1b6b6f"></rect><text x="1012.00" y="86" class="value">15.89 MiB</text></svg></section></section><section class="workload"><h2>Prime Sieve</h2><p>Integer-only Sieve of Eratosthenes over a dense mark buffer.</p><p><strong>Stress:</strong> Sieve of Eratosthenes up to 2,000,000 with count/sum/last-prime checksum.</p><p><strong>Verification:</strong> Baseline que.</p><section class="chart-block"><h3>Median Wall Time</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Wall Time"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="140.15" height="18" rx="4" fill="#1b6b6f"></rect><text x="392.15" y="54" class="value">18.56 ms</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">100.63 ms</text></svg></section><section class="chart-block"><h3>Median Peak RSS</h3><svg viewBox="0 0 1120 120" class="chart" role="img" aria-label="Median Peak RSS"><text x="12" y="54" class="label">1. Que</text><rect x="240" y="40" width="707.79" height="18" rx="4" fill="#1b6b6f"></rect><text x="959.79" y="54" class="value">27.75 MiB</text><text x="12" y="86" class="label">2. Python</text><rect x="240" y="72" width="760.00" height="18" rx="4" fill="#285f8f"></rect><text x="1012.00" y="86" class="value">29.80 MiB</text></svg></section></section>
+  </main>
+  <dialog class="source-dialog" id="source-sum-1m-que"><div class="source-dialog-head"><h3>Sum / 1M Inclusive / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/sum_1m.que</p><pre><code>(let MOD 100000007)
+(let N 1000000)
+(mut i 1)
+(mut acc 0)
+(while (&lt;= i N) (do
+  (alter! acc (mod (+ acc i) MOD))
+  (alter! i (+ i 1))))
+acc
+</code></pre></dialog><dialog class="source-dialog" id="source-sum-1m-python"><div class="source-dialog-head"><h3>Sum / 1M Inclusive / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/sum_1m.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+
+
+MOD = 100000007
+
+
+def sum_1m_inclusive(limit: int) -&gt; int:
+    acc = 0
+    i = 1
+    while i &lt;= limit:
+        acc = (acc + i) % MOD
+        i += 1
+    return acc
+
+if __name__ == &#x27;__main__&#x27;:
+    n = 1000000
+    result = sum_1m_inclusive(n)
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-ttt-minimax-que"><div class="source-dialog-head"><h3>Tic-Tac-Toe / Minimax / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/ttt_minimax.que</p><pre><code>(let MOD 100000007)
+(let X 1)
+(let O -1)
+(let E 0)
+
+(let Board/line-score
+  (lambda board a b c
+    (do
+      (let v (get board a))
+      (cond
+        (= v E) 0
+        (and (= v (get board b)) (= v (get board c))) v
+        0))))
+
+(let Board/winner
+  (lambda board
+    (do
+      (let w0 (Board/line-score board 0 1 2))
+      (let w1 (Board/line-score board 3 4 5))
+      (let w2 (Board/line-score board 6 7 8))
+      (let w3 (Board/line-score board 0 3 6))
+      (let w4 (Board/line-score board 1 4 7))
+      (let w5 (Board/line-score board 2 5 8))
+      (let w6 (Board/line-score board 0 4 8))
+      (let w7 (Board/line-score board 2 4 6))
+      (cond
+        (not (= w0 0)) w0
+        (not (= w1 0)) w1
+        (not (= w2 0)) w2
+        (not (= w3 0)) w3
+        (not (= w4 0)) w4
+        (not (= w5 0)) w5
+        (not (= w6 0)) w6
+        (not (= w7 0)) w7
+        0))))
+
+(let Board/full?
+  (lambda board
+    (and
+      (not (= (get board 0) E))
+      (not (= (get board 1) E))
+      (not (= (get board 2) E))
+      (not (= (get board 3) E))
+      (not (= (get board 4) E))
+      (not (= (get board 5) E))
+      (not (= (get board 6) E))
+      (not (= (get board 7) E))
+      (not (= (get board 8) E)))))
+
+(let Other
+  (lambda player (- 0 player)))
+
+(letrec Minimax!
+  (lambda board player
+    (do
+      (let w (Board/winner board))
+      (cond
+        (= w X) X
+        (= w O) O
+        (Board/full? board) 0
+        (do
+          (mut best (if (= player X) -2 2))
+          (mut i 0)
+          (while (&lt; i 9) (do
+            (if (= (get board i) E)
+                (do
+                  (set! board i player)
+                  (let score (Minimax! board (Other player)))
+                  (set! board i E)
+                  (if (= player X)
+                      (if (&gt; score best) (alter! best score))
+                      (if (&lt; score best) (alter! best score)))))
+            (alter! i (+ i 1))))
+          best)))))
+
+(let Best/X-Move!
+  (lambda board
+    (do
+      (mut best-score -2)
+      (mut best-move -1)
+      (mut i 0)
+      (while (&lt; i 9) (do
+        (if (= (get board i) E)
+            (do
+              (set! board i X)
+              (let score (Minimax! board O))
+              (set! board i E)
+              (if (&gt; score best-score)
+                  (do
+                    (alter! best-score score)
+                    (alter! best-move i)))))
+        (alter! i (+ i 1))))
+      best-move)))
+
+(let Board/hash
+  (lambda board
+    (do
+      (mut acc 0)
+      (mut i 0)
+      (while (&lt; i 9) (do
+        (alter! acc (mod (+ acc (* (+ i 1) (+ (get board i) 2))) MOD))
+        (alter! i (+ i 1))))
+      acc)))
+
+(let Board/clone
+  (lambda board
+    [(get board 0) (get board 1) (get board 2)
+     (get board 3) (get board 4) (get board 5)
+     (get board 6) (get board 7) (get board 8)]))
+
+(let TicTacToe/respond!
+  (lambda board
+    (do
+      (let w0 (Board/winner board))
+      (cond
+        (= w0 X) { -1 X }
+        (= w0 O) { -1 O }
+        (Board/full? board) { -1 0 }
+        (do
+          (let move (Best/X-Move! board))
+          (set! board move X)
+          { move (Board/winner board) })))))
+
+(let boards
+  [
+    [1 -1 0 0 1 0 -1 0 0]
+    [1 0 -1 0 -1 0 1 0 0]
+    [0 1 0 -1 1 0 0 -1 0]
+    [1 -1 1 -1 1 0 0 0 -1]
+    [0 0 0 0 1 -1 1 -1 0]
+    [1 0 0 -1 0 0 0 1 -1]
+  ])
+
+(let ITERATIONS 3000)
+(mut outer 0)
+(mut acc 0)
+(while (&lt; outer ITERATIONS) (do
+  (mut bi 0)
+  (while (&lt; bi (length boards)) (do
+    (let board (Board/clone (get boards bi)))
+    (let { move winner } (TicTacToe/respond! board))
+    (let serial (+ 1 bi (* outer (length boards))))
+    (alter! acc
+      (mod
+        (+ acc
+           (* serial (+ move 2))
+           (* (+ winner 2) 17)
+           (Board/hash board))
+        MOD))
+    (alter! bi (+ bi 1))))
+  (alter! outer (+ outer 1))))
+acc
+</code></pre></dialog><dialog class="source-dialog" id="source-ttt-minimax-python"><div class="source-dialog-head"><h3>Tic-Tac-Toe / Minimax / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/ttt_minimax.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+
+
+MOD = 100000007
+TTT_X = 1
+TTT_O = -1
+TTT_E = 0
+TTT_BOARDS = [
+    [1, -1, 0, 0, 1, 0, -1, 0, 0],
+    [1, 0, -1, 0, -1, 0, 1, 0, 0],
+    [0, 1, 0, -1, 1, 0, 0, -1, 0],
+    [1, -1, 1, -1, 1, 0, 0, 0, -1],
+    [0, 0, 0, 0, 1, -1, 1, -1, 0],
+    [1, 0, 0, -1, 0, 0, 0, 1, -1],
+]
+
+
+def ttt_line_score(board: list[int], a: int, b: int, c: int) -&gt; int:
+    value = board[a]
+    if value == TTT_E:
+        return 0
+    return value if value == board[b] and value == board[c] else 0
+
+def ttt_winner(board: list[int]) -&gt; int:
+    return (
+        ttt_line_score(board, 0, 1, 2)
+        or ttt_line_score(board, 3, 4, 5)
+        or ttt_line_score(board, 6, 7, 8)
+        or ttt_line_score(board, 0, 3, 6)
+        or ttt_line_score(board, 1, 4, 7)
+        or ttt_line_score(board, 2, 5, 8)
+        or ttt_line_score(board, 0, 4, 8)
+        or ttt_line_score(board, 2, 4, 6)
+        or 0
+    )
+
+def ttt_full(board: list[int]) -&gt; bool:
+    for value in board:
+        if value == TTT_E:
+            return False
+    return True
+
+def ttt_minimax(board: list[int], player: int) -&gt; int:
+    winner = ttt_winner(board)
+    if winner == TTT_X:
+        return TTT_X
+    if winner == TTT_O:
+        return TTT_O
+    if ttt_full(board):
+        return 0
+
+    best = -2 if player == TTT_X else 2
+    for i in range(9):
+        if board[i] == TTT_E:
+            board[i] = player
+            score = ttt_minimax(board, -player)
+            board[i] = TTT_E
+            if player == TTT_X:
+                if score &gt; best:
+                    best = score
+            elif score &lt; best:
+                best = score
+    return best
+
+def ttt_best_x_move(board: list[int]) -&gt; int:
+    best_score = -2
+    best_move = -1
+    for i in range(9):
+        if board[i] == TTT_E:
+            board[i] = TTT_X
+            score = ttt_minimax(board, TTT_O)
+            board[i] = TTT_E
+            if score &gt; best_score:
+                best_score = score
+                best_move = i
+    return best_move
+
+def ttt_respond(board: list[int]) -&gt; tuple[int, int]:
+    winner = ttt_winner(board)
+    if winner == TTT_X or winner == TTT_O or ttt_full(board):
+        return -1, winner
+    move = ttt_best_x_move(board)
+    board[move] = TTT_X
+    return move, ttt_winner(board)
+
+def ttt_hash(board: list[int]) -&gt; int:
+    acc = 0
+    for i in range(9):
+        acc = (acc + (i + 1) * (board[i] + 2)) % MOD
+    return acc
+
+def ttt_minimax_benchmark(iterations: int) -&gt; int:
+    acc = 0
+    for outer in range(iterations):
+        for bi, template in enumerate(TTT_BOARDS):
+            board = template[:]
+            move, winner = ttt_respond(board)
+            serial = 1 + bi + outer * len(TTT_BOARDS)
+            acc = (acc + serial * (move + 2) + (winner + 2) * 17 + ttt_hash(board)) % MOD
+    return acc
+
+if __name__ == &#x27;__main__&#x27;:
+    iterations = 3000
+    result = ttt_minimax_benchmark(iterations)
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-fib-naive-que"><div class="source-dialog-head"><h3>Fibonacci / Naive Recursion / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/fib_naive.que</p><pre><code>(let N 35)
+
+(letrec fibonacci (lambda n
+  (if (&lt; n 2)
+      n
+      (+ (fibonacci (- n 1))
+         (fibonacci (- n 2))))))
+
+(fibonacci N)
+</code></pre></dialog><dialog class="source-dialog" id="source-fib-naive-python"><div class="source-dialog-head"><h3>Fibonacci / Naive Recursion / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/fib_naive.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+
+
+def fib_naive(n: int) -&gt; int:
+    if n &lt; 2:
+        return n
+    return fib_naive(n - 1) + fib_naive(n - 2)
+
+if __name__ == &#x27;__main__&#x27;:
+    n = 35
+    result = fib_naive(n)
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-n-queens-que"><div class="source-dialog-head"><h3>N-Queens / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/n_queens.que</p><pre><code>(let MOD 100000007)
+
+(let make-ints (lambda n (do
+  (let xs [])
+  (mut i 0)
+  (while (&lt; i n) (do
+    (set! xs (length xs) 0)
+    (alter! i (+ i 1))))
+  xs)))
+
+(let N 12)
+(let cols (make-ints N))
+(let pos-diag (make-ints (+ (* 2 N) 1)))
+(let neg-diag (make-ints (+ (* 2 N) 1)))
+(let placement (make-ints N))
+
+(&amp;mut COUNT 0)
+(&amp;mut HASH 0)
+
+(let record-solution! (lambda n (do
+  (&amp;alter! COUNT (+ (&amp;get COUNT) 1))
+  (let serial (get COUNT))
+  (mut row 0)
+  (mut acc (get HASH))
+  (while (&lt; row n) (do
+    (alter! acc
+      (mod
+        (+ acc
+           (* (* serial (+ row 1)) (+ (get placement row) 1)))
+        MOD))
+    (alter! row (+ row 1))))
+  (&amp;alter! HASH acc)
+  nil)))
+
+(letrec backtrack! (lambda row
+  (if (= row N)
+      (record-solution! N)
+      (do
+        (mut col 0)
+        (while (&lt; col N) (do
+          (let p (+ row col))
+          (let q (+ (- row col) (- N 1)))
+          (if (and (= (get cols col) 0)
+                   (= (get pos-diag p) 0)
+                   (= (get neg-diag q) 0))
+              (do
+                (set! cols col 1)
+                (set! pos-diag p 1)
+                (set! neg-diag q 1)
+                (set! placement row col)
+                (backtrack! (+ row 1))
+                (set! cols col 0)
+                (set! pos-diag p 0)
+                (set! neg-diag q 0))
+              nil)
+          (alter! col (+ col 1)))))))
+  )
+
+(backtrack! 0)
+(mod (+ (get HASH) (* (get COUNT) 101)) MOD)
+</code></pre></dialog><dialog class="source-dialog" id="source-n-queens-python"><div class="source-dialog-head"><h3>N-Queens / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/n_queens.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+
+
+MOD = 100000007
+
+
+def n_queens(size: int) -&gt; int:
+    cols = [0] * size
+    pos = [0] * (size * 2 + 1)
+    neg = [0] * (size * 2 + 1)
+    placement = [0] * size
+    count = 0
+    checksum = 0
+
+    def record_solution() -&gt; None:
+        nonlocal count, checksum
+        count += 1
+        serial = count
+        for row in range(size):
+            checksum = (checksum + serial * (row + 1) * (placement[row] + 1)) % MOD
+
+    def backtrack(row: int) -&gt; None:
+        if row == size:
+            record_solution()
+            return
+        for col in range(size):
+            p = row + col
+            q = row - col + size - 1
+            if cols[col] == 0 and pos[p] == 0 and neg[q] == 0:
+                cols[col] = 1
+                pos[p] = 1
+                neg[q] = 1
+                placement[row] = col
+                backtrack(row + 1)
+                cols[col] = 0
+                pos[p] = 0
+                neg[q] = 0
+
+    backtrack(0)
+    return (checksum + count * 101) % MOD
+
+if __name__ == &#x27;__main__&#x27;:
+    n = 12
+    result = n_queens(n)
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-gof-glider-que"><div class="source-dialog-head"><h3>Game of Life / Gliders / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/gof_glider.que</p><pre><code>(let MOD 100000007)
+
+(let idx (lambda size x y (+ x (* y size))))
+
+(let wrap1 (lambda v n
+  (if (&lt; v 0)
+      (+ v n)
+      (if (&gt;= v n) (- v n) v))))
+
+(let new-board (lambda size (do
+  (let board [])
+  (mut i 0)
+  (while (&lt; i (* size size)) (do
+    (set! board (length board) 0)
+    (alter! i (+ i 1))))
+  board)))
+
+(let set-cell! (lambda board size x y value (do
+  (set! board (idx size (wrap1 x size) (wrap1 y size)) value))))
+
+(let add-glider! (lambda board size y x (do
+  (set-cell! board size (+ x 1) (+ y 2) 1)
+  (set-cell! board size (+ x 2) (+ y 2) 1)
+  (set-cell! board size (+ x 3) (+ y 2) 1)
+  (set-cell! board size (+ x 3) (+ y 1) 1)
+  (set-cell! board size (+ x 2) (+ y 0) 1))))
+
+(let neighbor-count (lambda board size x y (do
+  (mut sm 0)
+  (mut dy -1)
+  (while (&lt;= dy 1) (do
+    (mut dx -1)
+    (while (&lt;= dx 1) (do
+      (if (or (not (= dx 0)) (not (= dy 0)))
+          (do
+            (let nx (wrap1 (+ x dx) size))
+            (let ny (wrap1 (+ y dy) size))
+            (alter! sm (+ sm (get board (idx size nx ny))))))
+      (alter! dx (+ dx 1))))
+    (alter! dy (+ dy 1))))
+  sm)))
+
+(let step-and-hash (lambda board size weight (do
+  (let next (new-board size))
+  (mut acc weight)
+  (mut y 0)
+  (while (&lt; y size) (do
+    (mut x 0)
+    (while (&lt; x size) (do
+      (let i (idx size x y))
+      (let alive (get board i))
+      (let n (neighbor-count board size x y))
+      (let out (cond
+        (and (= alive 1) (or (= n 2) (= n 3))) 1
+        (and (= alive 0) (= n 3)) 1
+        0))
+      (set! next i out)
+      (if (= out 1)
+          (alter! acc (mod (+ acc (* (+ i 1) weight) 1) MOD)))
+      (alter! x (+ x 1))))
+    (alter! y (+ y 1))))
+  { next (mod acc MOD) })))
+
+(let STEPS 1200)
+(let SIZE 96)
+
+(let initial (new-board SIZE))
+(add-glider! initial SIZE 0 0)
+(add-glider! initial SIZE 5 3)
+(add-glider! initial SIZE 1 3)
+(add-glider! initial SIZE 6 4)
+(&amp;mut STATE initial)
+(mut step 0)
+(mut acc 0)
+(while (&lt; step STEPS) (do
+  (let { a b } (step-and-hash (get STATE) SIZE (+ step 1)))
+  (&amp;alter! STATE a)
+  (alter! acc (mod (+ acc b) MOD))
+  (alter! step (+ step 1))))
+acc
+</code></pre></dialog><dialog class="source-dialog" id="source-gof-glider-python"><div class="source-dialog-head"><h3>Game of Life / Gliders / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/gof_glider.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+
+
+MOD = 100000007
+
+
+def wrap1(value: int, size: int) -&gt; int:
+    if value &lt; 0:
+        return value + size
+    if value &gt;= size:
+        return value - size
+    return value
+
+def idx(size: int, x: int, y: int) -&gt; int:
+    return x + y * size
+
+def add_glider(board: list[int], size: int, y: int, x: int) -&gt; None:
+    board[idx(size, wrap1(x + 1, size), wrap1(y + 2, size))] = 1
+    board[idx(size, wrap1(x + 2, size), wrap1(y + 2, size))] = 1
+    board[idx(size, wrap1(x + 3, size), wrap1(y + 2, size))] = 1
+    board[idx(size, wrap1(x + 3, size), wrap1(y + 1, size))] = 1
+    board[idx(size, wrap1(x + 2, size), wrap1(y + 0, size))] = 1
+
+def step_life(board: list[int], size: int, weight: int) -&gt; tuple[list[int], int]:
+    next_board = [0] * len(board)
+    acc = weight
+    for y in range(size):
+        for x in range(size):
+            sm = 0
+            for dy in (-1, 0, 1):
+                for dx in (-1, 0, 1):
+                    if dx != 0 or dy != 0:
+                        nx = wrap1(x + dx, size)
+                        ny = wrap1(y + dy, size)
+                        sm += board[idx(size, nx, ny)]
+            i = idx(size, x, y)
+            alive = board[i]
+            out = 1 if (alive == 1 and (sm == 2 or sm == 3)) or (alive == 0 and sm == 3) else 0
+            next_board[i] = out
+            if out == 1:
+                acc = (acc + (i + 1) * weight + 1) % MOD
+    return next_board, acc
+
+def gof_glider(steps: int, size: int) -&gt; int:
+    board = [0] * (size * size)
+    add_glider(board, size, 0, 0)
+    add_glider(board, size, 5, 3)
+    add_glider(board, size, 1, 3)
+    add_glider(board, size, 6, 4)
+    acc = 0
+    for step in range(steps):
+        board, frame_hash = step_life(board, size, step + 1)
+        acc = (acc + frame_hash) % MOD
+    return acc
+
+if __name__ == &#x27;__main__&#x27;:
+    steps = 1200
+    size = 96
+    result = gof_glider(steps, size)
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-mandel-que"><div class="source-dialog-head"><h3>Mandelbrot Zoom / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/mandel.que</p><pre><code>(let MOD 100000007)
+(let SCALE 4096)
+(let CX -6072)
+(let CY 0)
+(let SX 6144)
+
+(let mandel-iter (lambda cx cy max-it (do
+  (mut zx 0)
+  (mut zy 0)
+  (mut iter 0)
+  (mut mag2 0)
+  (while (and (&lt; iter max-it) (&lt; mag2 (* 4 SCALE))) (do
+    (let x2 (/ (* zx zx) SCALE))
+    (let y2 (/ (* zy zy) SCALE))
+    (let xy2 (/ (* (* 2 zx) zy) SCALE))
+    (alter! zy (+ xy2 cy))
+    (alter! zx (+ (- x2 y2) cx))
+    (alter! mag2 (+ (/ (* zx zx) SCALE) (/ (* zy zy) SCALE)))
+    (alter! iter (+ iter 1))))
+  iter)))
+
+(let render-frame-hash (lambda width height center-x center-y span-x span-y max-it weight (do
+  (let left (- center-x span-x))
+  (let right (+ center-x span-x))
+  (let top (- center-y span-y))
+  (let bottom (+ center-y span-y))
+  (let dx (- right left))
+  (let dy (- bottom top))
+  (mut acc weight)
+  (mut y 0)
+  (while (&lt; y height) (do
+    (let cy (+ top (/ (* y dy) (- height 1))))
+    (mut x 0)
+    (while (&lt; x width) (do
+      (let cx (+ left (/ (* x dx) (- width 1))))
+      (let it (mandel-iter cx cy max-it))
+      (alter! acc (mod (+ acc (* it (+ 1 x (* y width))) 1) MOD))
+      (alter! x (+ x 1))))
+    (alter! y (+ y 1))))
+  (mod acc MOD))))
+
+(let FRAMES 80)
+(let WIDTH 100)
+(let HEIGHT 36)
+(let MAX-ITER 64)
+
+(mut center-x CX)
+(mut center-y CY)
+(mut span-x SX)
+(mut span-y (/ (* span-x HEIGHT) WIDTH))
+(mut frame 0)
+(mut acc 0)
+(while (&lt; frame FRAMES) (do
+  (alter! acc (mod (+ acc (render-frame-hash WIDTH HEIGHT center-x center-y span-x span-y MAX-ITER (+ frame 1))) MOD))
+  (alter! span-x (/ (* span-x 97) 100))
+  (alter! span-y (/ (* span-y 97) 100))
+  (if (&lt; span-x 128)
+      (do
+        (alter! center-x CX)
+        (alter! center-y CY)
+        (alter! span-x SX)
+        (alter! span-y (/ (* span-x HEIGHT) WIDTH)))
+      nil)
+  (alter! frame (+ frame 1))))
+acc
+</code></pre></dialog><dialog class="source-dialog" id="source-mandel-python"><div class="source-dialog-head"><h3>Mandelbrot Zoom / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/mandel.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import math
+import sys
+
+
+MOD = 100000007
+SCALE = 4096
+CX = -6072
+CY = 0
+SX = 6144
+
+
+def idiv(a: int, b: int) -&gt; int:
+    return math.trunc(a / b)
+
+def mandel_iter(cx: int, cy: int, max_it: int) -&gt; int:
+    zx = 0
+    zy = 0
+    iteration = 0
+    mag2 = 0
+    while iteration &lt; max_it and mag2 &lt; 4 * SCALE:
+        x2 = idiv(zx * zx, SCALE)
+        y2 = idiv(zy * zy, SCALE)
+        xy2 = idiv(2 * zx * zy, SCALE)
+        zy = xy2 + cy
+        zx = x2 - y2 + cx
+        mag2 = idiv(zx * zx, SCALE) + idiv(zy * zy, SCALE)
+        iteration += 1
+    return iteration
+
+def mandel(frames: int, width: int, height: int, max_it: int) -&gt; int:
+    center_x = CX
+    center_y = CY
+    span_x = SX
+    span_y = idiv(span_x * height, width)
+    acc = 0
+    for frame in range(frames):
+        left = center_x - span_x
+        right = center_x + span_x
+        top = center_y - span_y
+        bottom = center_y + span_y
+        dx = right - left
+        dy = bottom - top
+        frame_acc = frame + 1
+        for y in range(height):
+            cy = top + idiv(y * dy, height - 1)
+            for x in range(width):
+                cx = left + idiv(x * dx, width - 1)
+                it = mandel_iter(cx, cy, max_it)
+                frame_acc = (frame_acc + it * (x + 1 + y * width) + 1) % MOD
+        acc = (acc + frame_acc) % MOD
+        span_x = idiv(span_x * 97, 100)
+        span_y = idiv(span_y * 97, 100)
+        if span_x &lt; 128:
+            center_x = CX
+            center_y = CY
+            span_x = SX
+            span_y = idiv(span_x * height, width)
+    return acc
+
+if __name__ == &#x27;__main__&#x27;:
+    frames = 80
+    width = 100
+    height = 36
+    max_iter = 64
+    result = mandel(frames, width, height, max_iter)
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-donut-que"><div class="source-dialog-head"><h3>ASCII Donut / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/donut.que</p><pre><code>(let MOD 100000007)
+(let WIDTH 80)
+(let HEIGHT 25)
+(let BUFFER-SIZE (* WIDTH HEIGHT))
+(let PALETTE-MAX 11)
+(let R1 1)
+(let R2 2048)
+(let K2 (* 5120 1024))
+
+(let make-buffer (lambda n value (do
+  (let out [])
+  (mut i 0)
+  (while (&lt; i n) (do
+    (set! out (length out) value)
+    (alter! i (+ i 1))))
+  out)))
+
+(let clear-buffer! (lambda buffer value (do
+  (mut i 0)
+  (while (&lt; i BUFFER-SIZE) (do
+    (set! buffer i value)
+    (alter! i (+ i 1))))
+  nil)))
+
+(let frame-hash (lambda output zbuffer weight (do
+  (mut acc weight)
+  (mut i 0)
+  (while (&lt; i BUFFER-SIZE) (do
+    (alter! acc (mod (+ acc (* (+ i 1) (get output i)) (+ (get zbuffer i) 256)) MOD))
+    (alter! i (+ i 1))))
+  acc)))
+
+(let FRAMES 160)
+
+(let output (make-buffer BUFFER-SIZE 0))
+(let zbuffer (make-buffer BUFFER-SIZE 127))
+(mut sA 1024)
+(mut cA 0)
+(mut sB 1024)
+(mut cB 0)
+(mut frame 0)
+(mut acc 0)
+
+(while (&lt; frame FRAMES) (do
+  (clear-buffer! output 0)
+  (clear-buffer! zbuffer 127)
+
+  (mut sj 0)
+  (mut cj 1024)
+  (mut j 0)
+  (while (&lt; j 90) (do
+    (mut si 0)
+    (mut ci 1024)
+    (mut i 0)
+    (while (&lt; i 324) (do
+      (let x0 (+ (* R1 cj) R2))
+      (let x1 (&gt;&gt; (* ci x0) 10))
+      (let x2 (&gt;&gt; (* cA sj) 10))
+      (let x3 (&gt;&gt; (* si x0) 10))
+      (let x4 (- (* R1 x2) (&gt;&gt; (* sA x3) 10)))
+      (let x5 (&gt;&gt; (* sA sj) 10))
+      (let x6 (+ K2 (* R1 1024 x5) (* cA x3)))
+      (let x7 (&gt;&gt; (* cj si) 10))
+
+      (let x (+ 40 (/ (* 30 (- (* cB x1) (* sB x4))) x6)))
+      (let y (+ 12 (/ (* 15 (+ (* cB x4) (* sB x1))) x6)))
+
+      (let n0 (- 0
+                 (* cA x7)
+                 (* cB (+ (&gt;&gt; (- 0 (* sA x7)) 10) x2))
+                 (* ci (&gt;&gt; (* cj sB) 10))))
+      (let n1 (&gt;&gt; n0 10))
+      (let N (&gt;&gt; (- n1 x5) 7))
+
+      (if (and (&gt; HEIGHT y) (&gt; y 0) (&gt; x 0) (&gt; WIDTH x))
+          (do
+            (let o (+ x (* WIDTH y)))
+            (let zz (&gt;&gt; (- x6 K2) 15))
+            (if (&lt; zz (get zbuffer o))
+                (do
+                  (set! zbuffer o zz)
+                  (mut shade (if (&gt; N 0) N 0))
+                  (if (&gt; shade PALETTE-MAX) (alter! shade PALETTE-MAX) nil)
+                  (set! output o (+ shade 1)))
+                nil))
+          nil)
+
+      (let tmp0 ci)
+      (alter! ci (- ci (&gt;&gt; (* 5 si) 8)))
+      (alter! si (+ si (&gt;&gt; (* 5 tmp0) 8)))
+      (let norm0 (&gt;&gt; (- 3145728 (* ci ci) (* si si)) 11))
+      (alter! ci (&gt;&gt; (* ci norm0) 10))
+      (alter! si (&gt;&gt; (* si norm0) 10))
+      (alter! i (+ i 1))))
+
+    (let tmp1 cj)
+    (alter! cj (- cj (&gt;&gt; (* 9 sj) 7)))
+    (alter! sj (+ sj (&gt;&gt; (* 9 tmp1) 7)))
+    (let norm1 (&gt;&gt; (- 3145728 (* cj cj) (* sj sj)) 11))
+    (alter! cj (&gt;&gt; (* cj norm1) 10))
+    (alter! sj (&gt;&gt; (* sj norm1) 10))
+    (alter! j (+ j 1))))
+
+  (alter! acc (mod (+ acc (frame-hash output zbuffer (+ frame 1))) MOD))
+
+  (let tmp2 cA)
+  (alter! cA (- cA (&gt;&gt; (* 5 sA) 7)))
+  (alter! sA (+ sA (&gt;&gt; (* 5 tmp2) 7)))
+  (let norm2 (&gt;&gt; (- 3145728 (* cA cA) (* sA sA)) 11))
+  (alter! cA (&gt;&gt; (* cA norm2) 10))
+  (alter! sA (&gt;&gt; (* sA norm2) 10))
+
+  (let tmp3 cB)
+  (alter! cB (- cB (&gt;&gt; (* 5 sB) 8)))
+  (alter! sB (+ sB (&gt;&gt; (* 5 tmp3) 8)))
+  (let norm3 (&gt;&gt; (- 3145728 (* cB cB) (* sB sB)) 11))
+  (alter! cB (&gt;&gt; (* cB norm3) 10))
+  (alter! sB (&gt;&gt; (* sB norm3) 10))
+
+  (alter! frame (+ frame 1))))
+acc
+</code></pre></dialog><dialog class="source-dialog" id="source-donut-python"><div class="source-dialog-head"><h3>ASCII Donut / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/donut.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+
+
+MOD = 100000007
+WIDTH = 80
+HEIGHT = 25
+BUFFER_SIZE = WIDTH * HEIGHT
+PALETTE_MAX = 11
+R1 = 1
+R2 = 2048
+K2 = 5120 * 1024
+
+
+def idiv(a: int, b: int) -&gt; int:
+    return int(a / b)
+
+
+def donut(frames: int) -&gt; int:
+    output = [0] * BUFFER_SIZE
+    zbuffer = [127] * BUFFER_SIZE
+    s_a = 1024
+    c_a = 0
+    s_b = 1024
+    c_b = 0
+    acc = 0
+
+    for frame in range(frames):
+        for i in range(BUFFER_SIZE):
+            output[i] = 0
+            zbuffer[i] = 127
+
+        sj = 0
+        cj = 1024
+        j = 0
+        while j &lt; 90:
+            si = 0
+            ci = 1024
+            i = 0
+            while i &lt; 324:
+                x0 = R1 * cj + R2
+                x1 = (ci * x0) &gt;&gt; 10
+                x2 = (c_a * sj) &gt;&gt; 10
+                x3 = (si * x0) &gt;&gt; 10
+                x4 = R1 * x2 - ((s_a * x3) &gt;&gt; 10)
+                x5 = (s_a * sj) &gt;&gt; 10
+                x6 = K2 + R1 * 1024 * x5 + c_a * x3
+                x7 = (cj * si) &gt;&gt; 10
+
+                x = 40 + idiv(30 * (c_b * x1 - s_b * x4), x6)
+                y = 12 + idiv(15 * (c_b * x4 + s_b * x1), x6)
+
+                n0 = 0 - c_a * x7 - c_b * (((0 - s_a * x7) &gt;&gt; 10) + x2) - ci * ((cj * s_b) &gt;&gt; 10)
+                n1 = n0 &gt;&gt; 10
+                shade_n = (n1 - x5) &gt;&gt; 7
+
+                if y &lt; HEIGHT and y &gt; 0 and x &gt; 0 and x &lt; WIDTH:
+                    o = x + WIDTH * y
+                    zz = (x6 - K2) &gt;&gt; 15
+                    if zz &lt; zbuffer[o]:
+                        zbuffer[o] = zz
+                        shade = shade_n if shade_n &gt; 0 else 0
+                        if shade &gt; PALETTE_MAX:
+                            shade = PALETTE_MAX
+                        output[o] = shade + 1
+
+                tmp0 = ci
+                ci = ci - ((5 * si) &gt;&gt; 8)
+                si = si + ((5 * tmp0) &gt;&gt; 8)
+                norm0 = (3145728 - ci * ci - si * si) &gt;&gt; 11
+                ci = (ci * norm0) &gt;&gt; 10
+                si = (si * norm0) &gt;&gt; 10
+                i += 1
+
+            tmp1 = cj
+            cj = cj - ((9 * sj) &gt;&gt; 7)
+            sj = sj + ((9 * tmp1) &gt;&gt; 7)
+            norm1 = (3145728 - cj * cj - sj * sj) &gt;&gt; 11
+            cj = (cj * norm1) &gt;&gt; 10
+            sj = (sj * norm1) &gt;&gt; 10
+            j += 1
+
+        frame_acc = frame + 1
+        for i in range(BUFFER_SIZE):
+            frame_acc = (frame_acc + (i + 1) * output[i] + zbuffer[i] + 256) % MOD
+        acc = (acc + frame_acc) % MOD
+
+        tmp2 = c_a
+        c_a = c_a - ((5 * s_a) &gt;&gt; 7)
+        s_a = s_a + ((5 * tmp2) &gt;&gt; 7)
+        norm2 = (3145728 - c_a * c_a - s_a * s_a) &gt;&gt; 11
+        c_a = (c_a * norm2) &gt;&gt; 10
+        s_a = (s_a * norm2) &gt;&gt; 10
+
+        tmp3 = c_b
+        c_b = c_b - ((5 * s_b) &gt;&gt; 8)
+        s_b = s_b + ((5 * tmp3) &gt;&gt; 8)
+        norm3 = (3145728 - c_b * c_b - s_b * s_b) &gt;&gt; 11
+        c_b = (c_b * norm3) &gt;&gt; 10
+        s_b = (s_b * norm3) &gt;&gt; 10
+
+    return acc
+
+if __name__ == &#x27;__main__&#x27;:
+    frames = 160
+    result = donut(frames)
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-reverse-complement-que"><div class="source-dialog-head"><h3>Reverse Complement / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/reverse_complement.que</p><pre><code>(let MOD 100000007)
+
+(let base-at
+  (lambda (i)
+    (cond
+      (= (mod (+ (* i 7) 3) 4) 0) &#x27;A&#x27;
+      (= (mod (+ (* i 7) 3) 4) 1) &#x27;C&#x27;
+      (= (mod (+ (* i 7) 3) 4) 2) &#x27;G&#x27;
+      &#x27;T&#x27;)))
+
+(let complement-score
+  (lambda (c)
+    (cond
+      (=# c &#x27;A&#x27;) 4
+      (=# c &#x27;C&#x27;) 3
+      (=# c &#x27;G&#x27;) 2
+      1)))
+
+(let make-dna
+  (lambda (n)
+    (do
+      (let xs [])
+      (mut i 0)
+      (while (&lt; i n)
+        (do
+          (set! xs (length xs) (base-at i))
+          (alter! i (+ i 1))))
+      xs)))
+
+(let reverse-complement/checksum
+  (lambda (xs)
+    (do
+      (mut i (- (length xs) 1))
+      (mut pos 1)
+      (mut acc 0)
+      (while (&gt;= i 0)
+        (do
+          (alter! acc
+            (mod (+ acc (* pos (complement-score (get xs i)))) MOD))
+          (alter! pos (+ pos 1))
+          (alter! i (- i 1))))
+      acc)))
+
+(let N 1000000)
+
+(reverse-complement/checksum (make-dna N))
+</code></pre></dialog><dialog class="source-dialog" id="source-reverse-complement-python"><div class="source-dialog-head"><h3>Reverse Complement / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/reverse_complement.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+import sys
+
+
+MOD = 100000007
+BASES = (65, 67, 71, 84)
+
+
+def make_dna(length: int) -&gt; bytearray:
+    data = bytearray(length)
+    i = 0
+    while i &lt; length:
+        data[i] = BASES[(i * 7 + 3) % 4]
+        i += 1
+    return data
+
+
+def complement_score(code: int) -&gt; int:
+    if code == 65:
+        return 4
+    if code == 67:
+        return 3
+    if code == 71:
+        return 2
+    return 1
+
+
+def reverse_complement_checksum(data: bytearray) -&gt; int:
+    acc = 0
+    pos = 1
+    i = len(data) - 1
+    while i &gt;= 0:
+        acc = (acc + pos * complement_score(data[i])) % MOD
+        pos += 1
+        i -= 1
+    return acc
+
+
+if __name__ == &#x27;__main__&#x27;:
+    n = 1000000
+    result = reverse_complement_checksum(make_dna(n))
+    print(result)
+</code></pre></dialog><dialog class="source-dialog" id="source-sieve-que"><div class="source-dialog-head"><h3>Prime Sieve / Que</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/que/sieve.que</p><pre><code>(let MOD 100000007)
+(let N 2000000)
+
+(let marks [])
+(mut i 0)
+(while (&lt;= i N) (do
+  (set! marks (length marks) 1)
+  (alter! i (+ i 1))))
+
+(set! marks 0 0)
+(set! marks 1 0)
+
+(mut p 2)
+(while (&lt;= (* p p) N) (do
+  (if (= (get marks p) 1)
+      (do
+        (mut j (* p p))
+        (while (&lt;= j N) (do
+          (set! marks j 0)
+          (alter! j (+ j p)))))
+      nil)
+  (alter! p (+ p 1))))
+
+(mut count 0)
+(mut sum-mod 0)
+(mut last 0)
+(mut k 2)
+(while (&lt;= k N) (do
+  (if (= (get marks k) 1)
+      (do
+        (alter! count (+ count 1))
+        (alter! sum-mod (mod (+ sum-mod k) MOD))
+        (alter! last k))
+      nil)
+  (alter! k (+ k 1))))
+
+(mod (+ (* count 31) (* sum-mod 17) last) MOD)
+</code></pre></dialog><dialog class="source-dialog" id="source-sieve-python"><div class="source-dialog-head"><h3>Prime Sieve / Python</h3><button type="button" class="source-close" data-close-source>Close</button></div><p>/Users/anthony/Desktop/scripts/scripts/benchmark/languages/python/workloads/sieve.py</p><pre><code>#!/usr/bin/env python3
+
+from __future__ import annotations
+
+
+MOD = 100000007
+LIMIT = 2000000
+
+
+def sieve_checksum(limit: int) -&gt; int:
+    marks = [True] * (limit + 1)
+    marks[0] = False
+    marks[1] = False
+
+    p = 2
+    while p * p &lt;= limit:
+        if marks[p]:
+            i = p * p
+            while i &lt;= limit:
+                marks[i] = False
+                i += p
+        p += 1
+
+    count = 0
+    sum_mod = 0
+    last = 0
+    i = 2
+    while i &lt;= limit:
+        if marks[i]:
+            count += 1
+            sum_mod = (sum_mod + i) % MOD
+            last = i
+        i += 1
+    return (count * 31 + sum_mod * 17 + last) % MOD
+
+
+if __name__ == &#x27;__main__&#x27;:
+    print(sieve_checksum(LIMIT))
+</code></pre></dialog>
+  <script>
+    (() => {
+      const tableBody = document.getElementById("summary-body");
+      const buttons = Array.from(document.querySelectorAll("th button[data-sort-key]"));
+      if (!tableBody || buttons.length === 0) {
+        return;
+      }
+
+      const compareText = (a, b) => a.localeCompare(b);
+      const compareNumber = (a, b) => Number(a) - Number(b);
+
+      const setButtonState = (button, direction) => {
+        buttons.forEach((item) => {
+          item.classList.remove("active");
+          const indicator = item.querySelector(".sort-indicator");
+          if (indicator) {
+            indicator.textContent = "↕";
+          }
+          item.dataset.sortDirection = "";
+        });
+        button.classList.add("active");
+        button.dataset.sortDirection = direction;
+        const indicator = button.querySelector(".sort-indicator");
+        if (indicator) {
+          indicator.textContent = direction === "asc" ? "↑" : "↓";
+        }
+      };
+
+      const updateRanks = () => {
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+        rows.forEach((row, index) => {
+          const cell = row.querySelector(".rank-cell");
+          if (cell) {
+            cell.textContent = String(index + 1);
+          }
+        });
+      };
+
+      const sortRows = (button, direction) => {
+        const key = Number(button.dataset.sortKey);
+        const type = button.dataset.sortType || "text";
+        const comparator = type === "number" ? compareNumber : compareText;
+        const rows = Array.from(tableBody.querySelectorAll("tr"));
+        rows.sort((left, right) => {
+          const leftCell = left.children[key];
+          const rightCell = right.children[key];
+          const leftValue = leftCell?.dataset.sortValue ?? leftCell?.textContent ?? "";
+          const rightValue = rightCell?.dataset.sortValue ?? rightCell?.textContent ?? "";
+          const result = comparator(leftValue, rightValue);
+          if (result !== 0) {
+            return direction === "asc" ? result : -result;
+          }
+          return 0;
+        });
+        tableBody.replaceChildren(...rows);
+        updateRanks();
+        setButtonState(button, direction);
+      };
+
+      buttons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const current = button.dataset.sortDirection;
+          const next = current === "asc" ? "desc" : "asc";
+          sortRows(button, next);
+        });
+      });
+
+      const defaultButton = buttons.find((button) => button.dataset.defaultSort);
+      if (defaultButton) {
+        sortRows(defaultButton, defaultButton.dataset.defaultSort);
+      } else {
+        updateRanks();
+      }
+
+      const sourceLinks = Array.from(document.querySelectorAll(".source-link[data-source-target]"));
+      const closeButtons = Array.from(document.querySelectorAll("[data-close-source]"));
+      sourceLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+          const id = link.dataset.sourceTarget;
+          const dialog = id ? document.getElementById(id) : null;
+          if (dialog && typeof dialog.showModal === "function") {
+            dialog.showModal();
+          }
+        });
+      });
+      closeButtons.forEach((button) => {
+        button.addEventListener("click", () => {
+          const dialog = button.closest("dialog");
+          if (dialog) {
+            dialog.close();
+          }
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
