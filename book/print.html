@@ -1,0 +1,1534 @@
+<!DOCTYPE HTML>
+<html lang="en" class="navy sidebar-visible" dir="ltr">
+    <head>
+        <!-- Book generated using mdBook -->
+        <meta charset="UTF-8">
+        <title>Calque — a typed Lisp for WebAssembly</title>
+        <meta name="robots" content="noindex">
+
+
+        <!-- Custom HTML head -->
+
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="theme-color" content="#ffffff">
+
+        <link rel="icon" href="favicon-de23e50b.svg">
+        <link rel="shortcut icon" href="favicon-8114d1fc.png">
+        <link rel="stylesheet" href="css/variables-8adf115d.css">
+        <link rel="stylesheet" href="css/general-e96d0476.css">
+        <link rel="stylesheet" href="css/chrome-d279d366.css">
+        <link rel="stylesheet" href="css/print-9e4910d8.css" media="print">
+
+        <!-- Fonts -->
+        <link rel="stylesheet" href="fonts/fonts-9644e21d.css">
+
+        <!-- Highlight.js Stylesheets -->
+        <link rel="stylesheet" id="mdbook-highlight-css" href="highlight-493f70e1.css">
+        <link rel="stylesheet" id="mdbook-tomorrow-night-css" href="tomorrow-night-4c0ae647.css">
+        <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
+
+        <!-- Custom theme stylesheets -->
+        <link rel="stylesheet" href="theme/custom-bdb5754c.css">
+
+
+        <!-- Provide site root and default themes to javascript -->
+        <script>
+            const path_to_root = "";
+            const default_light_theme = "navy";
+            const default_dark_theme = "navy";
+            window.path_to_searchindex_js = "searchindex-56af7dc9.js";
+        </script>
+        <!-- Start loading toc.js asap -->
+        <script src="toc-de53471e.js"></script>
+    </head>
+    <body>
+    <div id="mdbook-help-container">
+        <div id="mdbook-help-popup">
+            <h2 class="mdbook-help-title">Keyboard shortcuts</h2>
+            <div>
+                <p>Press <kbd>←</kbd> or <kbd>→</kbd> to navigate between chapters</p>
+                <p>Press <kbd>S</kbd> or <kbd>/</kbd> to search in the book</p>
+                <p>Press <kbd>?</kbd> to show this help</p>
+                <p>Press <kbd>Esc</kbd> to hide this help</p>
+            </div>
+        </div>
+    </div>
+    <div id="mdbook-body-container">
+        <!-- Work around some values being stored in localStorage wrapped in quotes -->
+        <script>
+            try {
+                let theme = localStorage.getItem('mdbook-theme');
+                let sidebar = localStorage.getItem('mdbook-sidebar');
+
+                if (theme.startsWith('"') && theme.endsWith('"')) {
+                    localStorage.setItem('mdbook-theme', theme.slice(1, theme.length - 1));
+                }
+
+                if (sidebar.startsWith('"') && sidebar.endsWith('"')) {
+                    localStorage.setItem('mdbook-sidebar', sidebar.slice(1, sidebar.length - 1));
+                }
+            } catch (e) { }
+        </script>
+
+        <!-- Set the theme before any content is loaded, prevents flash -->
+        <script>
+            const default_theme = window.matchMedia("(prefers-color-scheme: dark)").matches ? default_dark_theme : default_light_theme;
+            let theme;
+            try { theme = localStorage.getItem('mdbook-theme'); } catch(e) { }
+            if (theme === null || theme === undefined) { theme = default_theme; }
+            const html = document.documentElement;
+            html.classList.remove('navy')
+            html.classList.add(theme);
+            html.classList.add("js");
+        </script>
+
+        <input type="checkbox" id="mdbook-sidebar-toggle-anchor" class="hidden">
+
+        <!-- Hide / unhide sidebar before it is displayed -->
+        <script>
+            let sidebar = null;
+            const sidebar_toggle = document.getElementById("mdbook-sidebar-toggle-anchor");
+            if (document.body.clientWidth >= 1080) {
+                try { sidebar = localStorage.getItem('mdbook-sidebar'); } catch(e) { }
+                sidebar = sidebar || 'visible';
+            } else {
+                sidebar = 'hidden';
+                sidebar_toggle.checked = false;
+            }
+            if (sidebar === 'visible') {
+                sidebar_toggle.checked = true;
+            } else {
+                html.classList.remove('sidebar-visible');
+            }
+        </script>
+
+        <nav id="mdbook-sidebar" class="sidebar" aria-label="Table of contents">
+            <!-- populated by js -->
+            <mdbook-sidebar-scrollbox class="sidebar-scrollbox"></mdbook-sidebar-scrollbox>
+            <noscript>
+                <iframe class="sidebar-iframe-outer" src="toc.html"></iframe>
+            </noscript>
+            <div id="mdbook-sidebar-resize-handle" class="sidebar-resize-handle">
+                <div class="sidebar-resize-indicator"></div>
+            </div>
+        </nav>
+
+        <div id="mdbook-page-wrapper" class="page-wrapper">
+
+            <div class="page">
+                <div id="mdbook-menu-bar-hover-placeholder"></div>
+                <div id="mdbook-menu-bar" class="menu-bar sticky">
+                    <div class="left-buttons">
+                        <label id="mdbook-sidebar-toggle" class="icon-button" for="mdbook-sidebar-toggle-anchor" title="Toggle Table of Contents" aria-label="Toggle Table of Contents" aria-controls="mdbook-sidebar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M0 96C0 78.3 14.3 64 32 64H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 128 0 113.7 0 96zM0 256c0-17.7 14.3-32 32-32H416c17.7 0 32 14.3 32 32s-14.3 32-32 32H32c-17.7 0-32-14.3-32-32zM448 416c0 17.7-14.3 32-32 32H32c-17.7 0-32-14.3-32-32s14.3-32 32-32H416c17.7 0 32 14.3 32 32z"/></svg></span>
+                        </label>
+                        <button id="mdbook-theme-toggle" class="icon-button" type="button" title="Change theme" aria-label="Change theme" aria-haspopup="true" aria-expanded="false" aria-controls="mdbook-theme-list">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M371.3 367.1c27.3-3.9 51.9-19.4 67.2-42.9L600.2 74.1c12.6-19.5 9.4-45.3-7.6-61.2S549.7-4.4 531.1 9.6L294.4 187.2c-24 18-38.2 46.1-38.4 76.1L371.3 367.1zm-19.6 25.4l-116-104.4C175.9 290.3 128 339.6 128 400c0 3.9 .2 7.8 .6 11.6c1.8 17.5-10.2 36.4-27.8 36.4H96c-17.7 0-32 14.3-32 32s14.3 32 32 32H240c61.9 0 112-50.1 112-112c0-2.5-.1-5-.2-7.5z"/></svg></span>
+                        </button>
+                        <ul id="mdbook-theme-list" class="theme-popup" aria-label="Themes" role="menu">
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-default_theme">Auto</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-light">Light</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-rust">Rust</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-coal">Coal</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-navy">Navy</button></li>
+                            <li role="none"><button role="menuitem" class="theme" id="mdbook-theme-ayu">Ayu</button></li>
+                        </ul>
+                        <button id="mdbook-search-toggle" class="icon-button" type="button" title="Search (`/`)" aria-label="Toggle Searchbar" aria-expanded="false" aria-keyshortcuts="/ s" aria-controls="mdbook-searchbar">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M416 208c0 45.9-14.9 88.3-40 122.7L502.6 457.4c12.5 12.5 12.5 32.8 0 45.3s-32.8 12.5-45.3 0L330.7 376c-34.4 25.2-76.8 40-122.7 40C93.1 416 0 322.9 0 208S93.1 0 208 0S416 93.1 416 208zM208 352c79.5 0 144-64.5 144-144s-64.5-144-144-144S64 128.5 64 208s64.5 144 144 144z"/></svg></span>
+                        </button>
+                    </div>
+
+                    <h1 class="menu-title">Calque — a typed Lisp for WebAssembly</h1>
+
+                    <div class="right-buttons">
+                        <a href="print.html" title="Print this book" aria-label="Print this book">
+                            <span class=fa-svg id="print-button"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M128 0C92.7 0 64 28.7 64 64v96h64V64H354.7L384 93.3V160h64V93.3c0-17-6.7-33.3-18.7-45.3L400 18.7C388 6.7 371.7 0 354.7 0H128zM384 352v32 64H128V384 368 352H384zm64 32h32c17.7 0 32-14.3 32-32V256c0-35.3-28.7-64-64-64H64c-35.3 0-64 28.7-64 64v96c0 17.7 14.3 32 32 32H64v64c0 35.3 28.7 64 64 64H384c35.3 0 64-28.7 64-64V384zm-16-88c-13.3 0-24-10.7-24-24s10.7-24 24-24s24 10.7 24 24s-10.7 24-24 24z"/></svg></span>
+                        </a>
+                        <a href="https://github.com/AT-290690/que-script" title="Git repository" aria-label="Git repository">
+                            <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 496 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M165.9 397.4c0 2-2.3 3.6-5.2 3.6-3.3.3-5.6-1.3-5.6-3.6 0-2 2.3-3.6 5.2-3.6 3-.3 5.6 1.3 5.6 3.6zm-31.1-4.5c-.7 2 1.3 4.3 4.3 4.9 2.6 1 5.6 0 6.2-2s-1.3-4.3-4.3-5.2c-2.6-.7-5.5.3-6.2 2.3zm44.2-1.7c-2.9.7-4.9 2.6-4.6 4.9.3 2 2.9 3.3 5.9 2.6 2.9-.7 4.9-2.6 4.6-4.6-.3-1.9-3-3.2-5.9-2.9zM244.8 8C106.1 8 0 113.3 0 252c0 110.9 69.8 205.8 169.5 239.2 12.8 2.3 17.3-5.6 17.3-12.1 0-6.2-.3-40.4-.3-61.4 0 0-70 15-84.7-29.8 0 0-11.4-29.1-27.8-36.6 0 0-22.9-15.7 1.6-15.4 0 0 24.9 2 38.6 25.8 21.9 38.6 58.6 27.5 72.9 20.9 2.3-16 8.8-27.1 16-33.7-55.9-6.2-112.3-14.3-112.3-110.5 0-27.5 7.6-41.3 23.6-58.9-2.6-6.5-11.1-33.3 2.6-67.9 20.9-6.5 69 27 69 27 20-5.6 41.5-8.5 62.8-8.5s42.8 2.9 62.8 8.5c0 0 48.1-33.6 69-27 13.7 34.7 5.2 61.4 2.6 67.9 16 17.7 25.8 31.5 25.8 58.9 0 96.5-58.9 104.2-114.8 110.5 9.2 7.9 17 22.9 17 46.4 0 33.7-.3 75.4-.3 83.6 0 6.5 4.6 14.4 17.3 12.1C428.2 457.8 496 362.9 496 252 496 113.3 383.5 8 244.8 8zM97.2 352.9c-1.3 1-1 3.3.7 5.2 1.6 1.6 3.9 2.3 5.2 1 1.3-1 1-3.3-.7-5.2-1.6-1.6-3.9-2.3-5.2-1zm-10.8-8.1c-.7 1.3.3 2.9 2.3 3.9 1.6 1 3.6.7 4.3-.7.7-1.3-.3-2.9-2.3-3.9-2-.6-3.6-.3-4.3.7zm32.4 35.6c-1.6 1.3-1 4.3 1.3 6.2 2.3 2.3 5.2 2.6 6.5 1 1.3-1.3.7-4.3-1.3-6.2-2.2-2.3-5.2-2.6-6.5-1zm-11.4-14.7c-1.6 1-1.6 3.6 0 5.9 1.6 2.3 4.3 3.3 5.6 2.3 1.6-1.3 1.6-3.9 0-6.2-1.4-2.3-4-3.3-5.6-2z"/></svg></span>
+                        </a>
+
+                    </div>
+                </div>
+
+                <div id="mdbook-search-wrapper" class="hidden">
+                    <form id="mdbook-searchbar-outer" class="searchbar-outer">
+                        <div class="search-wrapper">
+                            <input type="search" id="mdbook-searchbar" name="searchbar" placeholder="Search this book ..." aria-controls="mdbook-searchresults-outer" aria-describedby="searchresults-header">
+                            <div class="spinner-wrapper">
+                                <span class=fa-svg id="fa-spin"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M304 48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zm0 416c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM48 304c26.5 0 48-21.5 48-48s-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48zm464-48c0-26.5-21.5-48-48-48s-48 21.5-48 48s21.5 48 48 48s48-21.5 48-48zM142.9 437c18.7-18.7 18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zm0-294.2c18.7-18.7 18.7-49.1 0-67.9S93.7 56.2 75 75s-18.7 49.1 0 67.9s49.1 18.7 67.9 0zM369.1 437c18.7 18.7 49.1 18.7 67.9 0s18.7-49.1 0-67.9s-49.1-18.7-67.9 0s-18.7 49.1 0 67.9z"/></svg></span>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="mdbook-searchresults-outer" class="searchresults-outer hidden">
+                        <div id="mdbook-searchresults-header" class="searchresults-header"></div>
+                        <ul id="mdbook-searchresults">
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Apply ARIA attributes after the sidebar and the sidebar toggle button are added to the DOM -->
+                <script>
+                    document.getElementById('mdbook-sidebar-toggle').setAttribute('aria-expanded', sidebar === 'visible');
+                    document.getElementById('mdbook-sidebar').setAttribute('aria-hidden', sidebar !== 'visible');
+                    Array.from(document.querySelectorAll('#mdbook-sidebar a')).forEach(function(link) {
+                        link.setAttribute('tabIndex', sidebar === 'visible' ? 0 : -1);
+                    });
+                </script>
+
+                <div id="mdbook-content" class="content">
+                    <main>
+                        <h1 id="introduction"><a class="header" href="#introduction">Introduction</a></h1>
+<p>Calque is a small, statically typed, expression-oriented Lisp and its
+WebAssembly toolchain. It parses and type-checks a program, optimizes the typed
+AST, lowers it to WebAssembly, and ships the <code>que</code> CLI, formatter, language
+servers, runtime integration, and editor integrations.</p>
+<blockquote>
+<p><strong>Why <code>que</code>?</strong> Calque is the language and toolchain name. <code>que</code> is its
+compact technical spelling: the command is <code>que</code>, source files end in
+<code>.que</code>, project configuration is <code>que.toml</code>, and the language server is
+<code>quelsp</code>.</p>
+</blockquote>
+<p>Calque is designed for a particular trade-off: write direct functional code
+when it is the clearest model, and drop into explicit vectors, loops, and
+mutation when a program needs predictable work and memory behavior. The
+compiler type-checks the whole program before generating Wasm, and can explain
+many safety and optimization facts it proves.</p>
+<pre><code class="language-que">(let sum-squares
+  (lambda (xs)
+    (|&gt; xs
+        (map (lambda (x) (* x x)))
+        sum)))
+
+(sum-squares [1 2 3 4 5])
+; 55
+</code></pre>
+<h2 id="what-calque-provides"><a class="header" href="#what-calque-provides">What Calque provides</a></h2>
+<ul>
+<li>Hindley–Milner type inference, polymorphic functions, and explicit <code>sig</code>
+declarations where a boundary needs a known type.</li>
+<li>Lexical closures, recursion, partial application, macro expansion, and
+data-last functional APIs.</li>
+<li>Mutable locals and mutable vectors with direct loop constructs.</li>
+<li>Fixed-size <code>Int</code> arithmetic, fixed-point <code>Dec</code>, and compact closed enums.</li>
+<li>Static warnings for likely out-of-bounds access, empty-vector operations,
+unsafe arithmetic, and termination facts that could not be proven.</li>
+<li>WebAssembly output that runs through an external WASI runtime, plus an
+optional wasm2c/native-C repository path for ahead-of-time native binaries.</li>
+<li>The <code>que</code> command, formatter, language servers, and editor integrations.</li>
+</ul>
+<h2 id="status-and-compatibility"><a class="header" href="#status-and-compatibility">Status and compatibility</a></h2>
+<p>Calque is pre-1.0. It has a substantial regression and differential test suite,
+but the language and standard-library API may still evolve. Treat the compiler
+version as part of a project’s build input; pin a release for long-lived work.</p>
+<p>The rest of this book describes behavior implemented by the repository. For a
+live list of library signatures from the compiler you are actually running,
+use:</p>
+<pre><code class="language-sh">que --lib types
+que --lib types 'Table/*'
+que --lib source Table/get
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h1>
+<h2 id="install-the-compiler-and-a-runtime"><a class="header" href="#install-the-compiler-and-a-runtime">Install the compiler and a runtime</a></h2>
+<p>Calque emits WASI WebAssembly. The <code>que</code> command needs a compatible runtime on
+<code>PATH</code> to execute a program: <code>wasmtime</code> is the default; <code>wasmer</code> and
+<code>iwasm</code>/WAMR are also supported.</p>
+<p>Install the CLI and bundled library on Linux or macOS:</p>
+<pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/refs/heads/main/scripts/install.sh | bash
+</code></pre>
+<p>Then install your chosen WASI runtime. Select a non-default runtime per run:</p>
+<pre><code class="language-sh">que hello.que --runtime wasmer
+que hello.que --runtime /path/to/iwasm
+</code></pre>
+<h2 id="first-program"><a class="header" href="#first-program">First program</a></h2>
+<p>Create <code>hello.que</code>:</p>
+<pre><code class="language-que">(let greeting "Hello, Calque!")
+(println! greeting)
+</code></pre>
+<p>Run while developing:</p>
+<pre><code class="language-sh">que hello.que --debug --allow print
+</code></pre>
+<p>Use <code>--opt</code> for release-style execution after checking the program’s
+invariants:</p>
+<pre><code class="language-sh">que hello.que --opt --allow print
+</code></pre>
+<p><code>--debug</code> keeps runtime guards for checked integer arithmetic, division by
+zero, and vector access where appropriate, and reports static-analysis
+findings. <code>--opt</code> enables optimization and removes those optional runtime
+guards; it is not a substitute for establishing correctness.</p>
+<h2 id="learn-from-the-installed-compiler"><a class="header" href="#learn-from-the-installed-compiler">Learn from the installed compiler</a></h2>
+<pre><code class="language-sh">que --help
+que --learn
+que --examples
+que --style
+que --pitfalls
+</code></pre>
+<p>Evaluate a small source expression without making a file:</p>
+<pre><code class="language-sh">que --eval '(+ 20 22)' --debug
+</code></pre>
+<h2 id="a-project"><a class="header" href="#a-project">A project</a></h2>
+<p>A project uses <code>que.toml</code> to supply optional source dependencies and compiler
+environment settings:</p>
+<pre><code class="language-toml">entry = "main.que"
+deps = ["./lib/math.que"]
+
+[env]
+QUE_TCO = "aggressive"
+</code></pre>
+<p>Run the entry file explicitly from the project folder:</p>
+<pre><code class="language-sh">que main.que --debug
+</code></pre>
+<p>Calque discovers the nearest <code>que.toml</code>, loads <code>deps</code> as definition bundles, and
+applies its <code>[env]</code> settings. See <a href="#projects-tests-and-editors">Projects, tests, and
+editors</a> for the exact rules.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="language-tour"><a class="header" href="#language-tour">Language tour</a></h1>
+<p>Calque is an expression language. A program is a sequence of forms and its
+last value is the result. Function bodies also sequence their forms, so a
+separate <code>do</code> is useful for readability but not required merely to sequence.</p>
+<pre><code class="language-que">(let classify
+  (lambda (x)
+    (cond (&lt; x 0) "negative"
+          (= x 0) "zero"
+          "positive")))
+
+(map classify [3 -1 0 8])
+; ["positive" "negative" "zero" "positive"]
+</code></pre>
+<p><code>block</code> is different from sequencing: it creates a lexical scope. Use it when
+two branches or repeated loop bodies need their own local bindings.</p>
+<pre><code class="language-que">(if enabled?
+    (block (let label "on") label)
+    (block (let label "off") label))
+</code></pre>
+<h2 id="data-and-calls"><a class="header" href="#data-and-calls">Data and calls</a></h2>
+<pre><code class="language-que">[1 2 3]               ; vector
+{ "Ada" 37 }          ; tuple
+"hello"               ; string, typed as [Char]
+'x'                   ; Char
+true                   ; Bool
+nil                    ; unit, type ()
+
+(+ 20 22)             ; ordinary prefix call
+(map (lambda (x) (* x x)) [1 2 3])
+</code></pre>
+<p>Calls are curried. Supplying fewer arguments produces a function value, which
+makes partial application useful but also means that accidentally omitting an
+argument can produce a closure instead of an immediate error.</p>
+<pre><code class="language-que">(let add2 (+ 2))
+(add2 40) ; 42
+</code></pre>
+<h2 id="functional-and-imperative-code-together"><a class="header" href="#functional-and-imperative-code-together">Functional and imperative code together</a></h2>
+<p>Collection transforms use data-last arguments so they compose naturally:</p>
+<pre><code class="language-que">(|&gt; [1 2 3 4 5 6]
+    (select (lambda (x) (= (% x 2) 0)))
+    (map (lambda (x) (* x x))))
+; [4 16 36]
+</code></pre>
+<p>For a hot update loop, use a mutable local and a mutable vector directly:</p>
+<pre><code class="language-que">(let increment-all!
+  (lambda (xs)
+    (loop i (&lt; i (length xs))
+      (set! xs i (+ (get xs i) 1)))
+    xs))
+
+(increment-all! [10 20 30])
+; [11 21 31]
+</code></pre>
+<p>The following chapters spell out the rules behind these examples.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="types"><a class="header" href="#types">Types</a></h1>
+<p>Calque infers types with Hindley–Milner inference. Most bindings need no type
+annotation; incompatible uses are errors before Wasm generation.</p>
+<h2 id="core-types"><a class="header" href="#core-types">Core types</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Source type</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>Int</code></td><td>signed 32-bit integer (<code>i32</code>)</td></tr>
+<tr><td><code>Dec</code></td><td>fixed-point decimal backed by a scaled <code>i32</code></td></tr>
+<tr><td><code>Bool</code></td><td><code>true</code> or <code>false</code></td></tr>
+<tr><td><code>Char</code></td><td>a Unicode scalar value</td></tr>
+<tr><td><code>()</code></td><td>unit; <code>nil</code> has this type</td></tr>
+<tr><td><code>[T]</code></td><td>vector of values of type <code>T</code></td></tr>
+<tr><td><code>{A B}</code></td><td>ordered tuple</td></tr>
+<tr><td><code>A -&gt; B</code></td><td>function from <code>A</code> to <code>B</code></td></tr>
+<tr><td><code>Name</code></td><td>a declared enum type</td></tr>
+</tbody>
+</table>
+</div>
+<p>Strings are <code>[Char]</code>. This makes string operations ordinary vector-oriented
+operations at the language level; it does <strong>not</strong> mean strings are a packed
+UTF-8 byte array in the current runtime representation.</p>
+<pre><code class="language-que">(let count 3)              ; Int
+(let ready? true)          ; Bool
+(let title "Calque")       ; [Char]
+(let pair {count title})   ; {Int [Char]}
+</code></pre>
+<h2 id="numeric-types"><a class="header" href="#numeric-types">Numeric types</a></h2>
+<p><code>Int</code> does not silently become <code>Dec</code>. Use the decimal operators (<code>+.</code>, <code>-.</code>,
+<code>*.</code>, <code>/.</code>) and conversions such as <code>Int-&gt;Dec</code> / <code>Dec-&gt;Int</code> when crossing the
+boundary. The suffixed comparison operators follow the same pattern: <code>&lt;.</code> for
+<code>Dec</code>, <code>&lt;#</code> for <code>Char</code>, and so on.</p>
+<p><code>Dec</code> source literals are parsed as exact base-10 values. At runtime, a <code>Dec</code>
+is a scaled signed <code>i32</code> (scale <code>1000</code> by default and configurable with
+<code>QUE_DECIMAL_SCALE</code> at compile time). Decimal multiplication and division use
+<code>i64</code> intermediates before returning to the configured fixed-point scale.</p>
+<p><code>Int</code> overflow is meaningful: in debug mode guards can trap it, and strict
+analysis reports arithmetic it cannot prove safe. The <code>/safe?</code>, <code>+/safe?</code>,
+<code>*/safe?</code>, and related predicates can establish a guarded operation.</p>
+<h2 id="polymorphism"><a class="header" href="#polymorphism">Polymorphism</a></h2>
+<p>Library functions and ordinary inferred functions may be generic:</p>
+<pre><code class="language-que">(let first-or
+  (lambda (fallback xs)
+    (if (empty? xs) fallback (car xs))))
+</code></pre>
+<p>Its shape is conceptually <code>T -&gt; [T] -&gt; T</code>: the fallback and vector element
+must be the same type, but callers choose that type independently.</p>
+<p>Use a <code>sig</code> when an external boundary needs a concrete type or when you want
+to state the public contract explicitly. See <a href="#inference-and-signatures">Inference and
+signatures</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="bindings-and-scope"><a class="header" href="#bindings-and-scope">Bindings and scope</a></h1>
+<h2 id="immutable-and-mutable-locals"><a class="header" href="#immutable-and-mutable-locals">Immutable and mutable locals</a></h2>
+<p><code>let</code> binds an ordinary lexical name. A <code>let</code> binding cannot be reassigned.</p>
+<pre><code class="language-que">(let greeting "hello")
+(let answer (+ 40 2))
+</code></pre>
+<p><code>mut</code> declares a mutable local. Update it with <code>alter!</code>, <code>+=</code>, <code>++</code>, and the
+other mutation helpers:</p>
+<pre><code class="language-que">(mut total 0)
+(alter! total (+ total 10))
+(+= total 20)
+(++ total)
+total ; 31
+</code></pre>
+<p><code>alter!</code> takes a value, not a callback. It is equivalent in spirit to
+assignment after the new expression has been evaluated.</p>
+<h2 id="destructuring"><a class="header" href="#destructuring">Destructuring</a></h2>
+<p>Tuple and vector patterns can bind components directly:</p>
+<pre><code class="language-que">(let {name age} {"Ada" 37})
+(let [first second] [10 20])
+</code></pre>
+<p>Vector destructuring has the usual shape constraint: a fixed pattern such as
+<code>[first second]</code> requires the vector to contain those elements. The analyser
+may warn when it cannot prove that fact. Rest patterns are available in lambda
+parameter patterns:</p>
+<pre><code class="language-que">(let head (lambda ([x . xs]) x))
+</code></pre>
+<h2 id="scope"><a class="header" href="#scope">Scope</a></h2>
+<p>Names are lexical. A binding introduced by <code>block</code> is not visible after that
+block:</p>
+<pre><code class="language-que">(let label
+  (if true
+      (block (let value "yes") value)
+      (block (let value "no") value)))
+</code></pre>
+<p><code>do</code> sequences values but does <strong>not</strong> make a lexical scope. This distinction
+matters in branches and loops: prefer <code>block</code> for branch-local temporary
+bindings.</p>
+<h2 id="reference-cells"><a class="header" href="#reference-cells">Reference cells</a></h2>
+<p><code>&amp;mut</code>, <code>&amp;get</code>, and <code>&amp;alter!</code> are macros for an explicit mutable cell. They
+are useful when a closure must update state that outlives a single local scope:</p>
+<pre><code class="language-que">(&amp;mut counter 0)
+(let next!
+  (lambda ()
+    (&amp;alter! counter (+ (&amp;get counter) 1))))
+
+(next!) ; 1
+(next!) ; 2
+</code></pre>
+<p>They preserve the compiler’s normal mutation analysis; they are source-level
+convenience forms, not an untyped escape hatch.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="functions-and-recursion"><a class="header" href="#functions-and-recursion">Functions and recursion</a></h1>
+<h2 id="lambdas-and-calls"><a class="header" href="#lambdas-and-calls">Lambdas and calls</a></h2>
+<p>Use <code>lambda</code> to build a function. Parameters can be written as one name or a
+group:</p>
+<pre><code class="language-que">(let square (lambda (x) (* x x)))
+(let add (lambda (left right) (+ left right)))
+
+(square 9)
+(add 20 22)
+</code></pre>
+<p>Multiple forms in a lambda body are evaluated in order; its final form is the
+return value.</p>
+<pre><code class="language-que">(let magnitude
+  (lambda (x)
+    (let value (if (&lt; x 0) (- 0 x) x))
+    value))
+</code></pre>
+<p>Functions are first class and lexical closures capture the bindings they use.
+Calls support partial application, so <code>(map square)</code> is a function waiting for
+its vector argument.</p>
+<h2 id="recursive-bindings"><a class="header" href="#recursive-bindings">Recursive bindings</a></h2>
+<p>Use <code>letrec</code> when the binding calls itself:</p>
+<pre><code class="language-que">(letrec factorial
+  (lambda (n)
+    (if (&lt;= n 1)
+        1
+        (* n (factorial (- n 1))))))
+</code></pre>
+<p>Recursion is intentionally explicit. A <code>let</code> binding cannot refer to itself;
+this avoids accidental forward references and makes recursive intent obvious.
+The current type system does not permit arbitrary mutually recursive
+definitions through forward references.</p>
+<h2 id="tail-calls-and-loops"><a class="header" href="#tail-calls-and-loops">Tail calls and loops</a></h2>
+<p>Write direct loops for work that is naturally iterative. Calque recognizes and
+optimizes important tail-recursive shapes, but a <code>loop</code> / <code>while</code> makes the
+space behavior explicit and maps directly to Wasm control flow.</p>
+<pre><code class="language-que">(let factorial
+  (lambda (n)
+    (mut result 1)
+    (loop i (&lt;= i n)
+      (alter! result (* result i)))
+    result))
+</code></pre>
+<p>Use <code>que explain program.que --opt</code> to see whether the analyser proved a
+recursive function or loop terminating, and use the generated output when
+investigating performance.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="control-flow"><a class="header" href="#control-flow">Control flow</a></h1>
+<p>All control forms are expressions.</p>
+<h2 id="if-cond-and-when"><a class="header" href="#if-cond-and-when"><code>if</code>, <code>cond</code>, and <code>when</code></a></h2>
+<pre><code class="language-que">(if (&gt; score 0) "positive" "not positive")
+
+(cond
+  (&lt; score 0) "negative"
+  (= score 0) "zero"
+  "positive")
+
+(when ready?
+  (println! "go"))
+
+(unless ready?
+  (println! "wait"))
+</code></pre>
+<p><code>cond</code> tests each condition in order. Its last unpaired expression is the
+default branch. <code>when</code>, <code>when-not</code>, and <code>unless</code> are bundled macros.</p>
+<h2 id="while-and-loop"><a class="header" href="#while-and-loop"><code>while</code> and <code>loop</code></a></h2>
+<p><code>while</code> runs while its condition is true. The counter-style <code>loop</code> macro
+introduces and updates its named counter for you:</p>
+<pre><code class="language-que">(mut i 0)
+(while (&lt; i 3)
+  (println! i)
+  (++ i))
+
+(loop i (&lt; i 3)
+  (println! i))
+</code></pre>
+<p>There are library macros for common forms:</p>
+<pre><code class="language-que">(loop/for i 1 (&lt;= i 10) (++ i) (println! i))
+(loop/in value [10 20 30] (println! value))
+(loop/in/i (value index) [10 20] (println! {index value}))
+(times 3 (println! "tick"))
+</code></pre>
+<p>The correctness analyser recognizes many counter loops and can show the
+initial value, condition, update, and exit bound in <code>que explain</code>. It is
+conservative: “unknown” means it did not establish a proof, not that the loop
+is definitely infinite.</p>
+<h2 id="block-and-do"><a class="header" href="#block-and-do"><code>block</code> and <code>do</code></a></h2>
+<p>Use <code>block</code> when a control-flow branch needs its own bindings. Use <code>do</code> only
+when you need explicit sequencing without a new scope.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="vectors-tuples-strings-and-characters"><a class="header" href="#vectors-tuples-strings-and-characters">Vectors, tuples, strings, and characters</a></h1>
+<h2 id="vectors"><a class="header" href="#vectors">Vectors</a></h2>
+<p>Vectors are homogeneous mutable collections written with square brackets:</p>
+<pre><code class="language-que">(let xs [10 20 30])
+(get xs 1)       ; 20
+(set! xs 1 99)
+(push! xs 40)
+(pop! xs)
+</code></pre>
+<p>The basic operations are:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Form</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>(length xs)</code></td><td>number of elements</td></tr>
+<tr><td><code>(get xs i)</code></td><td>element at index <code>i</code></td></tr>
+<tr><td><code>(set! xs i value)</code></td><td>replace an existing element, or append at <code>length</code></td></tr>
+<tr><td><code>(push! xs value)</code></td><td>append</td></tr>
+<tr><td><code>(pop! xs)</code></td><td>remove the final element</td></tr>
+<tr><td><code>(pop-val! xs)</code></td><td>remove and return the final element</td></tr>
+<tr><td><code>(empty! xs)</code></td><td>set length to zero while retaining allocated capacity</td></tr>
+<tr><td><code>(car xs)</code>, <code>(cdr xs)</code></td><td>first element and tail-style view/copy API</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>get</code> is guarded in debug mode when the compiler cannot prove the access safe.
+Optimized code relies on the established invariant, so write an explicit guard
+or structure the loop so that the proof is obvious:</p>
+<pre><code class="language-que">(loop i (&lt; i (length xs))
+  (println! (get xs i)))
+</code></pre>
+<h2 id="tuples"><a class="header" href="#tuples">Tuples</a></h2>
+<p>Tuples are fixed-size heterogeneous values:</p>
+<pre><code class="language-que">(let person {"Ada" 37 true})
+(fst person) ; "Ada"
+(snd person) ; 37
+
+(let {name age active?} person)
+</code></pre>
+<p>Use tuples for a small fixed record-like value. A tuple has positional fields;
+names in a destructuring pattern are local variable names, not stored field
+names.</p>
+<h2 id="strings-and-characters"><a class="header" href="#strings-and-characters">Strings and characters</a></h2>
+<p>Strings are sequences of <code>Char</code> values, so their language type is <code>[Char]</code>:</p>
+<pre><code class="language-que">(let title "Calque")
+(get title 0)      ; 'Q'
+(length title)     ; 3
+(cons "Hello, " title)
+</code></pre>
+<p>Character literals use single quotes. Use <code>=#</code>, <code>&lt;#</code>, <code>+#</code>, and related
+operators for character arithmetic and comparison; use <code>Char-&gt;Int</code> and
+<code>Int-&gt;Char</code> when deliberately converting code points.</p>
+<p>The bundled library provides <code>split</code>, <code>split/lines</code>, <code>join</code>, <code>trim</code>, <code>slice</code>,
+<code>String-&gt;Integer</code>, <code>Integer-&gt;String</code>, <code>String/contains?</code>, <code>String/starts?</code>,
+and other text functions. Their exact signatures are available through:</p>
+<pre><code class="language-sh">que --lib types 'String/*'
+que --lib types 'split*'
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="enums-and-matching"><a class="header" href="#enums-and-matching">Enums and matching</a></h1>
+<p>An <code>enum</code> declares a closed set of zero-payload values:</p>
+<pre><code class="language-que">(enum Shape Rock Paper Scissors)
+</code></pre>
+<p><code>Rock</code>, <code>Paper</code>, and <code>Scissors</code> have type <code>Shape</code>; they are not <code>Int</code> values
+even though the compiler represents them compactly as <code>i32</code> tags at runtime.
+That separation prevents mixing unrelated domains by accident.</p>
+<p>If names would collide, choose qualified ordinary identifiers yourself:</p>
+<pre><code class="language-que">(enum Traffic Traffic/Red Traffic/Amber Traffic/Green)
+</code></pre>
+<h2 id="compare-enum-values"><a class="header" href="#compare-enum-values">Compare enum values</a></h2>
+<p>Use <code>=~</code> for enum equality:</p>
+<pre><code class="language-que">(=~ Rock Paper) ; false
+(=~ Rock Rock)  ; true
+</code></pre>
+<p>Both operands must have the same enum type. <code>=~ Rock 1</code> and comparison between
+values from two distinct enums are type errors. Ordinary <code>=</code> remains the
+integer equality operator; this deliberate distinction stops an enum tag from
+silently becoming an arbitrary number.</p>
+<h2 id="exhaustive-match"><a class="header" href="#exhaustive-match">Exhaustive <code>match</code></a></h2>
+<p><code>match</code> is for enum dispatch. It requires every variant, unless the final
+branch is <code>_</code>:</p>
+<pre><code class="language-que">(let score
+  (lambda (shape)
+    (match shape
+      Rock 1
+      Paper 2
+      Scissors 3)))
+</code></pre>
+<pre><code class="language-que">(let describe
+  (lambda (shape)
+    (match shape
+      Rock "rock"
+      _ "another shape")))
+</code></pre>
+<p>The match expression is checked statically. Adding a variant to a fully
+matched enum exposes every site that must decide how to handle it.</p>
+<h2 id="enums-in-functions-and-tables"><a class="header" href="#enums-in-functions-and-tables">Enums in functions and Tables</a></h2>
+<p>Enum values flow through ordinary variables and functions:</p>
+<pre><code class="language-que">(let winner?
+  (lambda ({left right})
+    (or (and (=~ left Rock) (=~ right Scissors))
+        (and (=~ left Paper) (=~ right Rock))
+        (and (=~ left Scissors) (=~ right Paper)))))
+</code></pre>
+<p>They are also efficient <code>Table</code> keys. Their compact tags are hashed and
+compared directly—there is no conversion to a string:</p>
+<pre><code class="language-que">(sig points [[{ Shape Int }]])
+(let points (Table/new))
+(Table/set! points Rock 1)
+(Table/set! points Paper 2)
+</code></pre>
+<p>Current enums have no payload variants. <code>match/string</code> remains available for
+the older string-dispatch macro use case.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="mutation-and-capacity"><a class="header" href="#mutation-and-capacity">Mutation and capacity</a></h1>
+<p>Mutation is explicit in both spelling and type/effect analysis. Use it for
+local counters, in-place algorithms, and predictable allocation behavior.</p>
+<h2 id="locals-and-vectors"><a class="header" href="#locals-and-vectors">Locals and vectors</a></h2>
+<pre><code class="language-que">(mut total 0)
+(loop i (&lt; i 10)
+  (+= total i))
+
+(let xs [])
+(push! xs total)
+(set! xs 0 42)
+</code></pre>
+<p>The caller-visible mutable value of a function is normally rooted in its first
+parameter. This keeps mutation APIs regular:</p>
+<pre><code class="language-que">(let fill-zeroes!
+  (lambda (xs)
+    (loop i (&lt; i (length xs))
+      (set! xs i 0))
+    xs))
+</code></pre>
+<h2 id="reserving-vector-storage"><a class="header" href="#reserving-vector-storage">Reserving vector storage</a></h2>
+<p><code>capacity!</code> reserves backing storage without changing a vector’s length:</p>
+<pre><code class="language-que">(let paths [])
+(capacity! paths 1000)
+
+(loop i (&lt; i 1000)
+  (push! paths i))
+</code></pre>
+<p>It is useful before a known burst of appends. It returns unit, deliberately:
+the vector itself remains the same mutable value. <code>empty!</code> similarly resets
+the vector’s length while retaining storage for reuse.</p>
+<pre><code class="language-que">(empty! paths)
+; paths can be refilled without reallocating until it grows past capacity
+</code></pre>
+<p><code>capacity!</code> is a reservation, not a maximum length. Appending more than the
+requested capacity remains valid and grows the vector as needed.</p>
+<h2 id="safe-fast-code"><a class="header" href="#safe-fast-code">Safe, fast code</a></h2>
+<p>For debug builds, Calque can trap unproven bad indices and checked arithmetic.
+For optimized builds, organize loops so <code>que explain</code> can see basic facts such
+as <code>0 &lt;= i &lt; length(xs)</code>. This lets the compiler remove checks where safe,
+while the source retains its clear invariant.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="pipelines-and-composition"><a class="header" href="#pipelines-and-composition">Pipelines and composition</a></h1>
+<p>Most functional library APIs take their data argument last. That makes a
+pipeline read from input to result:</p>
+<pre><code class="language-que">(|&gt; [1 2 3 4 5]
+    (select (lambda (x) (&gt; x 2)))
+    (map (lambda (x) (* x x)))
+    sum)
+; 50
+</code></pre>
+<p><code>|&gt;</code> inserts the value on its left as the final argument of each following
+form. The reverse pipeline <code>&lt;|</code> feeds a value into the final position from the
+other direction.</p>
+<pre><code class="language-que">(let parse-ids
+  (comp
+    trim
+    split/lines
+    (map String-&gt;Integer)))
+
+(parse-ids "1\n2\n3")
+</code></pre>
+<p><code>comp</code> builds a left-to-right data-last pipeline: the first listed function
+receives the input first. Pipelines are often more readable for a one-off
+transformation because they keep the data visible.</p>
+<p><code>apply</code> is a source-level macro that splices the written argument forms into a
+call. It is useful when another macro is constructing a call; it does <strong>not</strong>
+unpack a runtime vector:</p>
+<pre><code class="language-que">(apply + 20 22) ; expands to (+ 20 22), therefore 42
+</code></pre>
+<p><code>|&gt;</code>, <code>&lt;|</code>, <code>comp</code>, and <code>apply</code> are bundled macros. They expand before
+inference and code generation, so they do not add a dynamic dispatch cost.
+Extremely long pipeline expansions are intentionally bounded to keep macro
+expansion predictable; normal pipelines are unaffected.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="macros"><a class="header" href="#macros">Macros</a></h1>
+<p>Macros transform syntax before the program is inferred and compiled. They are
+written in Calque using <code>letmacro</code>, quasiquote (<code>qq</code>), unquote (<code>uq</code>), and
+unquote-splice (<code>uqs</code>).</p>
+<pre><code class="language-que">(letmacro unless
+  ((test body)
+    (qq (if (uq test) nil (uq body)))))
+</code></pre>
+<pre><code class="language-que">(unless (= 1 2)
+  (println! "runs"))
+</code></pre>
+<p>Macros are appropriate when you need new surface syntax or want to generate a
+repeated structural pattern. They are not ordinary runtime functions: they
+receive syntax, not evaluated values.</p>
+<h2 id="bundled-macros"><a class="header" href="#bundled-macros">Bundled macros</a></h2>
+<p>The bundled library implements many familiar forms as macros, including:</p>
+<ul>
+<li><code>when</code>, <code>when-not</code>, <code>unless</code>, <code>cond</code>, <code>!=</code>, <code>&lt;&gt;</code></li>
+<li><code>|&gt;</code>, <code>&lt;|</code>, <code>comp</code>, <code>apply</code></li>
+<li><code>loop</code>, <code>loop/for</code>, <code>loop/in</code>, <code>loop/in/i</code>, range-loop helpers, <code>times</code></li>
+<li><code>let*</code>, <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>++</code>, <code>--</code></li>
+<li><code>&amp;mut</code>, <code>&amp;get</code>, <code>&amp;alter!</code>, <code>variable</code></li>
+<li><code>match/string</code></li>
+</ul>
+<p>Use <code>que &lt;file&gt; --emit source</code> to inspect expanded source and understand what
+a macro call becomes. Formatter, LSP, and diagnostics preserve source
+locations where possible, but macro-generated code can still make a complex
+error easier to understand after looking at that expansion.</p>
+<h2 id="macro-discipline"><a class="header" href="#macro-discipline">Macro discipline</a></h2>
+<p>Prefer a function when values are enough. Prefer a macro when the caller needs
+new binding structure, control flow, or syntactic rearrangement. Keep macro
+expansions small, hygienic in spirit, and transparent enough that the expanded
+form remains ordinary, type-checkable Calque.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="inference-and-signatures"><a class="header" href="#inference-and-signatures">Inference and signatures</a></h1>
+<p>Calque infers types for ordinary bindings and generalizes them where valid. Start
+without annotations:</p>
+<pre><code class="language-que">(let id (lambda (x) x))
+(let pair-with (lambda (left right) {left right}))
+</code></pre>
+<p>The compiler rejects inconsistent uses before code generation.</p>
+<h2 id="sig"><a class="header" href="#sig"><code>sig</code></a></h2>
+<p>Use <code>sig</code> immediately before a binding when the program crosses a boundary
+whose type cannot be inferred from ordinary use, or when you want to state the
+binding’s contract:</p>
+<pre><code class="language-que">(sig parse/int! ([Char] -&gt; Int))
+(let parse/int! (lambda (text) (deserialize text)))
+</code></pre>
+<p><code>deserialize</code> is the important practical example: serialized characters do not
+contain enough static information for the compiler to know which decoder to
+generate. The signature supplies the expected result type.</p>
+<pre><code class="language-que">(enum Shape Rock Paper Scissors)
+
+(sig restored [[{ Shape Int }]])
+(let restored (deserialize saved))
+</code></pre>
+<p>The type above is the physical representation of a <code>Table</code> in the current
+library: a vector of buckets, each containing <code>{key value}</code> entries. Programs
+normally use <code>Table/new</code>, <code>Table/set!</code>, and <code>Table/get</code>; the representation only
+needs to be written at a serialization boundary.</p>
+<h2 id="function-type-syntax"><a class="header" href="#function-type-syntax">Function type syntax</a></h2>
+<pre><code class="language-que">(sig increment (Int -&gt; Int))
+(sig compare (Int -&gt; Int -&gt; Bool))
+(sig map-int ((Int -&gt; Int) -&gt; [Int] -&gt; [Int]))
+</code></pre>
+<p>An arrow chain associates to the right. Parenthesize a function when it is an
+argument type.</p>
+<h2 id="inspect-inferred-types"><a class="header" href="#inspect-inferred-types">Inspect inferred types</a></h2>
+<pre><code class="language-sh">que program.que --emit types
+que explain program.que
+</code></pre>
+<p>The LSP also exposes inferred types in hover information. Use a <code>sig</code> to make
+an intended public type visible and enforced, not merely to silence inference.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="correctness-analysis"><a class="header" href="#correctness-analysis">Correctness analysis</a></h1>
+<p>The type checker catches incompatible values. Calque’s static analyser adds
+conservative warnings about runtime properties that types alone cannot prove.</p>
+<p>Enable strict warnings in a source file:</p>
+<pre><code class="language-que">; use-strict-warnings!
+</code></pre>
+<p>Or inspect a full report:</p>
+<pre><code class="language-sh">que explain program.que --opt
+que explain program.que --opt --json
+</code></pre>
+<p>The report groups warnings before termination, effects and permissions,
+performance observations, and generated-code details.</p>
+<h2 id="bounds-and-empty-vectors"><a class="header" href="#bounds-and-empty-vectors">Bounds and empty vectors</a></h2>
+<p>The analyser recognizes common loop shapes:</p>
+<pre><code class="language-que">(loop i (&lt; i (length xs))
+  (get xs i))
+</code></pre>
+<p>Here it can establish <code>0 &lt;= i &lt; length(xs)</code>. If it cannot prove an access, it
+reports the source expression and suggests a guard such as:</p>
+<pre><code class="language-que">(and (&gt;= index 0) (&lt; index (length xs)))
+</code></pre>
+<p>It also reports calls such as <code>pop!</code>, <code>pop-val!</code>, and <code>car</code> when the vector may
+be empty. A warning is not necessarily a bug: it says a proof was unavailable.</p>
+<h2 id="arithmetic"><a class="header" href="#arithmetic">Arithmetic</a></h2>
+<p><code>Int</code> is signed <code>i32</code>. The analyser tracks ranges where it can and warns about
+possible overflow, underflow, division by zero, and unsafe squares. Guard a
+calculation with the matching predicate:</p>
+<pre><code class="language-que">(when (+/safe? left right)
+  (+ left right))
+</code></pre>
+<p>Debug execution additionally inserts runtime guards for configured checks;
+optimized execution assumes the program’s invariants. For this reason, first
+use <code>--debug</code>, address real warnings, then benchmark with <code>--opt</code>.</p>
+<h2 id="termination"><a class="header" href="#termination">Termination</a></h2>
+<p>Counter loops and many recursive calls have an inferred measure. For example,
+a counter initialized at zero, tested against a bound, and incremented toward
+that bound can be reported as proven terminating. Recursive code may be
+reported as <code>unknown</code> when the analyser cannot identify a decreasing measure.
+That result is intentionally conservative, not a claim of non-termination.</p>
+<p>Avoid writing a “fake” base case that does not actually guard the recursive
+call; the analyser follows control flow rather than just looking for a test.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="effects-and-permissions"><a class="header" href="#effects-and-permissions">Effects and permissions</a></h1>
+<p>Pure computation is available without runtime permissions. Host operations are
+explicit functions and must be granted capabilities when running under the
+external WASI host.</p>
+<pre><code class="language-que">(let input (read! "input.txt"))
+(println! input)
+</code></pre>
+<pre><code class="language-sh">que program.que --allow read print
+</code></pre>
+<h2 id="permission-groups"><a class="header" href="#permission-groups">Permission groups</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Permission</th><th>Operations</th></tr>
+</thead>
+<tbody>
+<tr><td><code>read</code></td><td><code>read!</code>, <code>list-dir!</code>, <code>read/chunks!</code>, <code>read/lines!</code></td></tr>
+<tr><td><code>stdin</code></td><td><code>stdin!</code>, <code>stdin/chunks!</code></td></tr>
+<tr><td><code>write</code></td><td><code>write!</code>, <code>mkdir!</code>, <code>move!</code></td></tr>
+<tr><td><code>delete</code></td><td><code>delete!</code></td></tr>
+<tr><td><code>print</code></td><td><code>print!</code>, <code>println!</code>, <code>clear!</code></td></tr>
+<tr><td><code>clock</code></td><td><code>sleep!</code>, <code>time!</code>, <code>random!</code></td></tr>
+<tr><td><code>all</code></td><td>all groups</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>--allow</code> accepts the groups separated by spaces on the command line. The
+runtime exposes the current working directory to the Wasm program when a file
+permission is granted.</p>
+<h2 id="streaming-input"><a class="header" href="#streaming-input">Streaming input</a></h2>
+<p>For large input, avoid allocating the full file when a callback can process it
+incrementally:</p>
+<pre><code class="language-que">(read/lines! "input.txt"
+  (lambda (line)
+    (println! line)
+    false))
+</code></pre>
+<p>The callback returns a <code>Bool</code>; use it to control the streaming operation as
+documented by the function’s live signature. Query the installed library when
+using chunked or line APIs:</p>
+<pre><code class="language-sh">que --lib types 'read/*'
+que --lib types 'stdin/*'
+</code></pre>
+<h2 id="serialization-and-ffi"><a class="header" href="#serialization-and-ffi">Serialization and FFI</a></h2>
+<p><code>serialize</code> converts a statically known Calque value to text. <code>deserialize</code>
+requires a concrete expected type, usually supplied by <code>sig</code>. Enums serialize
+by declared variant name and can be deserialized back into their enum type.</p>
+<p>For custom host functions and the Wasm ABI, see <a href="#ffi-and-host-imports">FFI and host
+imports</a>. External functions must have declared types;
+they are not dynamically typed escape hatches.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="webassembly-target"><a class="header" href="#webassembly-target">WebAssembly target</a></h1>
+<p>Calque lowers its typed AST into WebAssembly. Core scalar values fit the Wasm
+<code>i32</code> model: <code>Int</code>, <code>Bool</code>, <code>Char</code>, enum tags, <code>Dec</code>, and unit all have compact
+scalar lowering. Managed collections and closures use the runtime’s reference
+counted representation.</p>
+<h2 id="wasm32-today"><a class="header" href="#wasm32-today">Wasm32 today</a></h2>
+<p>The default target is Wasm32: linear-memory addresses and array indexes in the
+runtime are <code>i32</code>. An <code>Int</code> index is signed at the language level, while Wasm
+memory addressing is unsigned internally; valid program indices are therefore
+non-negative and bounded by the allocated vector length.</p>
+<p>Wasm32’s address space is bounded by its configured linear memory limits. This
+does not make the language architecture obsolete: Wasm continues to support
+<code>i32</code> operations on 64-bit hosts, and memory64 can be introduced later with an
+explicit wider language type rather than changing existing <code>Int</code> behavior.</p>
+<h2 id="inspect-generated-output"><a class="header" href="#inspect-generated-output">Inspect generated output</a></h2>
+<pre><code class="language-sh">que program.que --emit source --out expanded.que
+que program.que --opt --emit opt-source --out optimized.que
+que program.que --opt --emit wat --out program.wat
+que program.que --opt --emit wasm --out program.wasm
+</code></pre>
+<p>Use this when optimizing or reporting a compiler bug. The expanded source
+shows macro lowering; optimized source shows source-level rewrites; WAT shows
+the final Wasm structure.</p>
+<h2 id="runtime-choices"><a class="header" href="#runtime-choices">Runtime choices</a></h2>
+<p><code>que program.que</code> compiles then invokes an external WASI runtime. Wasmtime is
+the default runtime; Wasmer and iwasm/WAMR can also be selected.</p>
+<p>The repository’s native path runs generated Wasm through <code>wasm2c</code> and a C
+compiler. It is deliberately separate from the main <code>que</code> command:</p>
+<pre><code class="language-sh">./scripts/compile-native-c.sh program.que
+</code></pre>
+<p>This is useful for completed compute-heavy programs and native benchmarking.
+It is not a different source language: static typing, macro expansion, and
+Wasm generation occur first in the same compiler.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="cli"><a class="header" href="#cli">CLI</a></h1>
+<p>Run <code>que --help</code> for the installed command overview. The important commands
+are below.</p>
+<h2 id="run-and-compile"><a class="header" href="#run-and-compile">Run and compile</a></h2>
+<pre><code class="language-sh">que program.que --debug
+que program.que --opt
+que run-wasi program.que --runtime wasmtime --allow read print
+que compile program.que --opt --out program.wasm
+que wat program.que
+</code></pre>
+<p><code>run-wasi</code> is the explicit spelling of normal execution; <code>que program.que</code>
+uses it implicitly. <code>--runtime</code> accepts <code>wasmtime</code>, <code>wasmer</code>, <code>iwasm</code>/<code>wamr</code>,
+or a path to one of those executables.</p>
+<h2 id="inspect-and-explain"><a class="header" href="#inspect-and-explain">Inspect and explain</a></h2>
+<pre><code class="language-sh">que program.que --emit types
+que program.que --emit source
+que program.que --opt --emit opt-source
+que explain program.que --opt
+que explain program.que --opt --json --out report.json
+</code></pre>
+<h2 id="format-and-browse-the-library"><a class="header" href="#format-and-browse-the-library">Format and browse the library</a></h2>
+<pre><code class="language-sh">que fmt program.que
+que fmt program.que --check
+que fmt --stdin
+
+que --lib names 'Table/*'
+que --lib types 'map*'
+que --lib source Table/get
+</code></pre>
+<p>Library patterns are passed as an argument—names containing <code>!</code>, <code>?</code>, or <code>*</code>
+do not need shell escaping when quoted.</p>
+<h2 id="built-in-guides-and-environment"><a class="header" href="#built-in-guides-and-environment">Built-in guides and environment</a></h2>
+<pre><code class="language-sh">que --learn
+que --examples
+que --style
+que --pitfalls
+que --env
+</code></pre>
+<p><code>--env</code> lists compiler/runtime environment settings, including optimization,
+debug, decimal-scale, and runtime selection settings.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="projects-tests-and-editors"><a class="header" href="#projects-tests-and-editors">Projects, tests, and editors</a></h1>
+<h2 id="quetoml"><a class="header" href="#quetoml"><code>que.toml</code></a></h2>
+<p>When compiling a <code>.que</code> file, Calque searches upward from that file for a
+<code>que.toml</code>. The configuration can provide source bundles and environment
+settings:</p>
+<pre><code class="language-toml">entry = "main.que"
+deps = [
+  "./lib/math.que",
+  "./lib/text.que",
+]
+
+[env]
+QUE_WASM_OPT = "speed"
+QUE_DEVIRTUALIZE = "aggressive"
+QUE_TCO = "aggressive"
+</code></pre>
+<p><code>deps</code> paths are resolved from the project root. Each dependency must be a
+<code>.que</code> definition bundle: its top-level forms may be <code>sig</code>, <code>let</code>, <code>letrec</code>,
+<code>mut</code>, or <code>extern</code>, but not arbitrary run-time expressions. Calque merges those
+definitions with the standard library and the compiled source file.</p>
+<p>At present, invoke the source entry explicitly:</p>
+<pre><code class="language-sh">que main.que --debug
+</code></pre>
+<p>The <code>entry</code> field records the intended entrypoint for tooling and project
+conventions; compilation is driven by the source file passed to the current
+CLI command.</p>
+<h2 id="tests"><a class="header" href="#tests">Tests</a></h2>
+<p>Calque code is ordinary source, so a small test file can call project definitions
+and end by returning or printing a useful value. The bundled <code>test</code> macro is
+also available for assertion-shaped values. Run test sources with the same
+debug or optimized workflow you use for programs:</p>
+<pre><code class="language-sh">que tests/math.test.que --debug
+</code></pre>
+<p>Compiler regression tests live in the Rust workspace; run them from a checkout
+with <code>cargo test</code>.</p>
+<h2 id="formatter"><a class="header" href="#formatter">Formatter</a></h2>
+<pre><code class="language-sh">que fmt program.que
+que fmt program.que --check
+que fmt --stdin
+</code></pre>
+<p>The formatter keeps compact short forms where possible, uses two-space-style
+nesting, preserves comments, and deliberately keeps runs of closing delimiters
+together rather than spreading them across lines.</p>
+<h2 id="language-server-and-editors"><a class="header" href="#language-server-and-editors">Language server and editors</a></h2>
+<p><code>quelsp</code> provides diagnostics, inferred-type hover, completion, signatures,
+and project-aware definitions. The repository includes:</p>
+<ul>
+<li>a thin Neovim plugin in <code>miscs/neovim</code></li>
+<li>a VS Code extension in <code>miscs/extension/que-lang</code></li>
+</ul>
+<p>The Neovim integration provides <code>:QueFormat</code> / <code>&lt;Space&gt;f</code> and <code>:QueLib</code> /
+<code>&lt;Space&gt;g</code>. In <code>que nvim</code>, scratch commands include optimized run, debug run,
+WAT, inferred types, <code>explain</code>, expanded source, and library browsing.</p>
+<p>See the integration READMEs for installation details and configuration
+examples.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="ffi-and-host-imports"><a class="header" href="#ffi-and-host-imports">FFI and host imports</a></h1>
+<p>Calque’s current FFI is a <strong>WebAssembly host-import FFI</strong>. A Calque <code>extern</code>
+declaration becomes a Wasm import; an embedding host must supply a function
+with the same module and import names. It is not a C ABI, plugin system, or
+callback framework.</p>
+<h2 id="declare-an-import"><a class="header" href="#declare-an-import">Declare an import</a></h2>
+<pre><code class="language-que">(extern env add_one add-one! (Int -&gt; Int))
+
+(add-one! 41)
+; 42 when the host supplies env.add_one
+</code></pre>
+<p>The declaration syntax is:</p>
+<pre><code class="language-que">(extern module import local-name! Type)
+</code></pre>
+<p>Rules:</p>
+<ul>
+<li><code>extern</code> is top-level only.</li>
+<li>A local external name must end in <code>!</code>.</li>
+<li>External calls are treated as effectful by the compiler.</li>
+<li>The declaration has a concrete type; it is not dynamically typed.</li>
+</ul>
+<p>Zero-argument imports use unit as their argument:</p>
+<pre><code class="language-que">(extern env clock_now_ms clock-now-ms! (() -&gt; Int))
+</code></pre>
+<h2 id="supported-declared-shapes"><a class="header" href="#supported-declared-shapes">Supported declared shapes</a></h2>
+<p>Extern signatures use the familiar core type syntax:</p>
+<pre><code class="language-que">Int
+Dec
+Bool
+Char
+()
+[Char]
+[Int]
+{Int Int}
+(Int -&gt; Int)
+([Char] [Char] -&gt; ())
+</code></pre>
+<p>At the Wasm ABI boundary, scalar core values lower to <code>i32</code>. Vectors, tuples,
+and strings lower to an <code>i32</code> pointer into Calque’s linear memory. <code>Dec</code> is a
+fixed-point <code>i32</code>, not an <code>f64</code>. Calque’s managed representation is internal to
+the runtime: a host returning a managed value must construct a valid Calque heap
+object, while managed values received from Calque are borrowed unless the host
+explicitly retains them using the runtime convention.</p>
+<h2 id="built-in-host-operations"><a class="header" href="#built-in-host-operations">Built-in host operations</a></h2>
+<p>The standard runtime integration supplies typed host imports for file, stdin,
+terminal, clock, serialization, and randomness operations, including:</p>
+<pre><code class="language-text">read!             read/chunks!       read/lines!        list-dir!
+stdin!            stdin/chunks!      write!             mkdir!
+move!             delete!            print!             println!
+clear!            sleep!             time!              random!
+serialize         deserialize
+</code></pre>
+<p>They are capability-gated under the external WASI runner; see <a href="#effects-and-permissions">Effects and
+permissions</a>.</p>
+<h2 id="custom-hosts"><a class="header" href="#custom-hosts">Custom hosts</a></h2>
+<p>The normal <code>que</code> runner delegates to an external WASI runtime. It can run the
+built-in operations through Calque’s WASI adapter, but it does not load arbitrary
+user host modules from command-line configuration. A program containing a
+custom <code>extern</code> therefore needs an embedding/application that instantiates the
+generated Wasm module and supplies the declared import.</p>
+<p>For example, a Rust Wasmtime host conceptually registers:</p>
+<pre class="playground"><code class="language-rust"><span class="boring">#![allow(unused)]
+</span><span class="boring">fn main() {
+</span>linker.func_wrap("env", "add_one", |x: i32| -&gt; i32 { x + 1 })?;
+<span class="boring">}</span></code></pre>
+<p>before instantiating the compiled module. The exact initialization needed for
+Calque-managed values belongs to that host integration, not the source program.</p>
+<h2 id="current-limits"><a class="header" href="#current-limits">Current limits</a></h2>
+<p>The current supported model deliberately excludes:</p>
+<ul>
+<li>callbacks from host code into Calque closures</li>
+<li>an async/await runtime or automatic future bridging</li>
+<li>a stable public C ABI for Calque objects</li>
+<li>a generic CLI plugin loader for arbitrary imports</li>
+<li>automatic marshalling of arbitrary managed data</li>
+</ul>
+<p>The optional wasm2c/native-C runner still uses this host-import model: wasm2c
+translates the guest code, while the adapter supplies the imports. It does not
+turn Calque’s internal memory representation into a general C interface.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="standard-library-overview"><a class="header" href="#standard-library-overview">Standard library overview</a></h1>
+<p>The active library is implemented in the repository’s <code>lisp/</code> directory and
+is bundled into normal compilation. It is deliberately ordinary Calque source
+where possible: the compiler recognizes a small set of primitive operations,
+while functional helpers, collection APIs, loop conveniences, and algorithms
+are written in the language itself.</p>
+<h2 id="do-not-guess-a-signature"><a class="header" href="#do-not-guess-a-signature">Do not guess a signature</a></h2>
+<p>The installed compiler can query the library it actually bundles:</p>
+<pre><code class="language-sh">que --lib names 'Table/*'
+que --lib types 'map*'
+que --lib source Table/update!
+</code></pre>
+<p>This is the authoritative API reference between releases. The pages in this
+chapter explain the families and conventions rather than duplicating hundreds
+of signatures that could drift.</p>
+<h2 id="naming-and-argument-order"><a class="header" href="#naming-and-argument-order">Naming and argument order</a></h2>
+<ul>
+<li><code>!</code> marks a mutating or effectful operation.</li>
+<li><code>?</code> marks a predicate.</li>
+<li><code>/i</code> is commonly an index-aware collection variant.</li>
+<li><code>/raw</code> is an implementation-level helper; prefer its public counterpart.</li>
+<li>Namespace-like names use <code>/</code>: <code>Vector/sort!</code>, <code>String/contains?</code>,
+<code>Table/update!</code>.</li>
+<li>Transform-style functions usually take data last so they work with <code>|&gt;</code>.</li>
+<li>Mutating collection operations normally take the collection first.</li>
+</ul>
+<pre><code class="language-que">(|&gt; xs
+    (map normalize)
+    (select valid?)
+    sum)
+
+(Table/set! table key value)
+</code></pre>
+<h2 id="main-families"><a class="header" href="#main-families">Main families</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Family</th><th>Purpose</th></tr>
+</thead>
+<tbody>
+<tr><td>Core vectors</td><td><code>get</code>, <code>set!</code>, <code>push!</code>, <code>pop!</code>, <code>length</code>, <code>car</code>, <code>cdr</code></td></tr>
+<tr><td>Functional transforms</td><td><code>map</code>, <code>select</code>, <code>filter</code>, <code>reduce</code>, <code>sort</code>, <code>range</code></td></tr>
+<tr><td>Text and conversion</td><td><code>split</code>, <code>join</code>, <code>trim</code>, <code>slice</code>, <code>String/*</code>, <code>Integer-&gt;String</code></td></tr>
+<tr><td>Data structures</td><td><code>Table/*</code>, <code>Set/*</code>, <code>Heap/*</code>, <code>Que/*</code>, <code>Matrix/*</code></td></tr>
+<tr><td>Numbers</td><td>decimal helpers, bit operations, random, BigInt and SignedBigInt</td></tr>
+<tr><td>Meta and utility</td><td>dates, parsing helpers, test helpers, constants</td></tr>
+</tbody>
+</table>
+</div>
+<p>The following pages cover the most important usage patterns.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="functional-collections"><a class="header" href="#functional-collections">Functional collections</a></h1>
+<p>The central functional transforms are data-last.</p>
+<pre><code class="language-que">(|&gt; [1 2 3 4 5]
+    (map (lambda (x) (* x x)))
+    (select (lambda (x) (&gt; x 10)))
+    sum)
+</code></pre>
+<h2 id="transform-and-traverse"><a class="header" href="#transform-and-traverse">Transform and traverse</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Function</th><th>Role</th></tr>
+</thead>
+<tbody>
+<tr><td><code>map</code> / <code>map/i</code></td><td>build a new vector; <code>/i</code> receives the index</td></tr>
+<tr><td><code>filter</code>, <code>select</code>, <code>filter/i</code></td><td>retain items satisfying a predicate</td></tr>
+<tr><td><code>each</code> / <code>each/i</code></td><td>visit items and return the original vector</td></tr>
+<tr><td><code>for</code> / <code>for/i</code></td><td>visit items for effects</td></tr>
+<tr><td><code>reduce</code> / <code>reduce/i</code></td><td>fold with an explicit initial accumulator</td></tr>
+<tr><td><code>map/until</code>, <code>reduce/until</code>, <code>for/until</code></td><td>stop according to a predicate</td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-que">(reduce (lambda (total x) (+ total x)) 0 [10 20 30])
+; 60
+
+(map/i (lambda (x index) {index x}) ["a" "b"])
+</code></pre>
+<h2 id="construct-and-order"><a class="header" href="#construct-and-order">Construct and order</a></h2>
+<p><code>range</code>, <code>range/inclusive</code>, and related helpers construct numeric sequences.
+<code>sort</code> returns a sorted copy; <code>Vector/sort!</code> sorts a vector in place. Use a
+comparison predicate that expresses the desired ordering.</p>
+<pre><code class="language-que">(sort (lambda (left right) (&lt; left right)) [5 1 4 2])
+</code></pre>
+<p>For allocation-sensitive code, prefer explicit loops and a reserved output
+vector when the result length is known. Pipeline fusion may optimize common
+map/filter/reduce shapes, but clear source invariants remain the first goal.</p>
+<h2 id="numeric-aggregates"><a class="header" href="#numeric-aggregates">Numeric aggregates</a></h2>
+<p>The library has aggregate and statistical helpers including <code>sum</code>, <code>product</code>,
+<code>avg</code>, <code>mean</code>, <code>median</code>, <code>minimum</code>, and <code>maximum</code>, with integer and decimal
+variants where relevant. Query the exact expected element type rather than
+relying on a name alone:</p>
+<pre><code class="language-sh">que --lib types 'sum*'
+que --lib types 'avg*'
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="tables-sets-heaps-and-queues"><a class="header" href="#tables-sets-heaps-and-queues">Tables, sets, heaps, and queues</a></h1>
+<h2 id="tables"><a class="header" href="#tables">Tables</a></h2>
+<p><code>Table/new</code> creates a mutable hash table. Its public operations use
+collection-first mutation and data-last lookup/predicate forms:</p>
+<pre><code class="language-que">(let scores (Table/new))
+(Table/set! scores "Ada" 10)
+(Table/set! scores "Lin" 20)
+
+(Table/has? "Ada" scores)
+(Table/get "Ada" scores)
+</code></pre>
+<p><code>Table/get</code> returns the table’s entry-vector form. Use <code>Table/get*</code> for a
+checked result or <code>Table/get-unsafe</code> when presence is already established:</p>
+<pre><code class="language-que">(let {found? values} (Table/get* "Ada" scores))
+(if found? (get values 0) 0)
+
+(if (Table/has? "Ada" scores)
+    (Table/get-unsafe "Ada" scores)
+    0)
+</code></pre>
+<p><code>Table/update!</code> and <code>Table/update-or!</code> cover common count/accumulator patterns;
+<code>Table/entries</code>, <code>Table/keys</code>, <code>Table/values</code>, and <code>Table/count</code> expose its
+contents. Tables support their established key representations, including
+strings and closed enum tags. Use <code>Table/new/capacity</code> when an approximate
+entry count is known, and <code>Table/compact!</code> to rebuild after substantial
+deletion.</p>
+<h2 id="sets"><a class="header" href="#sets">Sets</a></h2>
+<p><code>Set/new</code>, <code>Set/add!</code>, <code>Set/remove!</code>, <code>Set/has?</code>, <code>Set/values</code>, and set algebra
+are provided for the library’s set representation. As with tables, query the
+specific function type for the accepted key kind:</p>
+<pre><code class="language-sh">que --lib types 'Set/*'
+</code></pre>
+<h2 id="heap-and-deque"><a class="header" href="#heap-and-deque">Heap and deque</a></h2>
+<p><code>Heap/*</code> implements a mutable binary heap using a caller-supplied comparison
+predicate. <code>Que/*</code> provides a deque-like structure backed by vectors, with
+operations such as <code>Que/push!</code>, <code>Que/prepend!</code>, <code>Que/first</code>, <code>Que/last</code>, and
+<code>Que/deque!</code>.</p>
+<p>These structures favor explicit mutation and predictable representation over
+hidden GC behavior. Use the public namespace functions rather than relying on
+their internal vector layout.</p>
+<h2 id="matrices"><a class="header" href="#matrices">Matrices</a></h2>
+<p><code>Matrix/new</code>, <code>Matrix/in-bounds?</code>, <code>Matrix/for/i</code>, and related helpers cover
+nested-vector matrix work. Matrix coordinates are explicit <code>Int</code> values; use
+the bounds helper before dynamic access when static analysis cannot prove an
+index safe.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="text-numbers-and-utilities"><a class="header" href="#text-numbers-and-utilities">Text, numbers, and utilities</a></h1>
+<h2 id="text"><a class="header" href="#text">Text</a></h2>
+<p>Strings are <code>[Char]</code>, and the library provides both general collection helpers
+and string-specific operations:</p>
+<pre><code class="language-que">(let fields (split "," "one,two,three"))
+(join " / " fields)
+(trim "  Calque  ")
+(String/starts? "Calque" "Calque compiler")
+(String/contains? "omp" "Calque compiler")
+</code></pre>
+<p>Useful conversion functions include <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code>,
+<code>String-&gt;Dec</code>, <code>Dec-&gt;String</code>, <code>Char-&gt;Int</code>, and <code>Int-&gt;Char</code>. Conversion is
+explicit because an <code>Int</code>, a decimal fixed-point value, a character, and text
+remain distinct static types.</p>
+<h2 id="numeric-helpers"><a class="header" href="#numeric-helpers">Numeric helpers</a></h2>
+<p>In addition to primitive arithmetic, the library provides range construction,
+clamping, min/max, absolute value, parity predicates, bit conversion, random
+helpers, and decimal-specific aliases. Big integers are a library-level digit
+vector representation:</p>
+<pre><code class="language-sh">que --lib types 'BigInt/*'
+que --lib types 'SignedBigInt/*'
+</code></pre>
+<p>They are useful when a calculation exceeds <code>Int</code>’s signed <code>i32</code> range, but are
+not a replacement for the fixed-cost behavior of normal <code>Int</code> arithmetic.</p>
+<h2 id="dates-and-metadata"><a class="header" href="#dates-and-metadata">Dates and metadata</a></h2>
+<p><code>Date/*</code> helpers parse and project date-like vectors. <code>Meta/*</code> provides simple
+metadata/token helpers. These are intentionally ordinary library APIs; use the
+live reference for their types and behavior before building a dependency on a
+particular representation.</p>
+<h2 id="testing-helpers"><a class="header" href="#testing-helpers">Testing helpers</a></h2>
+<p>The library contains <code>test</code>, <code>test-suite/static</code>, <code>assert/static</code>, and related
+macros for examples and compile-time-shaped test definitions. Compiler and
+runtime behavior is tested from the Rust workspace as well:</p>
+<pre><code class="language-sh">cargo test
+</code></pre>
+<p>For program-level checks, favor small <code>.que</code> test programs run under <code>--debug</code>
+and, for optimized code, compare the same expected result with <code>--opt</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="grid-paths-mutable-dynamic-programming"><a class="header" href="#grid-paths-mutable-dynamic-programming">Grid paths: mutable dynamic programming</a></h1>
+<p>This program counts right/down paths through a square grid. It demonstrates a
+small mutable vector, capacity reservation, an analyzable indexed loop, and an
+explicit arithmetic safety guard.</p>
+<pre><code class="language-lisp">; use-strict-warnings!
+
+; How many routes go from the top-left to the bottom-right of a 10 × 10 grid
+; when each step goes only right or down?
+(let SIZE 10)
+
+(let paths [])
+(capacity! paths (+ SIZE 1))
+(loop i (&lt;= i SIZE)
+  (push! paths 1))
+
+(loop row (&lt; row SIZE)
+  (loop/for col 1 (&lt;= col SIZE) (++ col)
+    (let left (get paths (- col 1)))
+    (let current (get paths col))
+    (when (+/safe? current left)
+      (set! paths col (+ current left)))))
+
+; 184756
+(get paths (- (length paths) 1))
+</code></pre>
+<p>The vector holds one dynamic-programming row. Initially every entry is one;
+each update adds the number of paths from the cell to the left to the number
+already stored for the cell above.</p>
+<p><code>capacity!</code> reserves room for the initial <code>SIZE + 1</code> appends but does not alter
+the vector’s length. The analyser can see the loop access bounds, and the
+<code>+/safe?</code> guard gives the source-level condition for the arithmetic update.</p>
+<p>Run the file during development with:</p>
+<pre><code class="language-sh">que grid-paths.que --debug
+que explain grid-paths.que --opt
+</code></pre>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="enum-keyed-table-round-trip"><a class="header" href="#enum-keyed-table-round-trip">Enum-keyed table round trip</a></h1>
+<p>Closed enums remain typed values even though their runtime representation is a
+compact <code>i32</code> tag. That makes them suitable for exhaustive dispatch and fast
+table keys.</p>
+<pre><code class="language-lisp">(enum Shape Rock Paper Scissors)
+
+(sig points [[{ Shape Int }]])
+(let points (Table/new))
+(Table/set! points Rock 1)
+(Table/set! points Scissors 2)
+
+(let text (serialize points))
+
+; The decoder needs a concrete expected type.
+(sig restored [[{ Shape Int }]])
+(let restored (deserialize text))
+
+(let score (Table/get-unsafe Rock restored))
+
+(match Rock
+  Rock score
+  Paper 0
+  Scissors 0)
+; 1
+</code></pre>
+<p>The <code>[[{ Shape Int }]]</code> annotation is only needed because <code>deserialize</code> needs
+to know which decoder to generate. It is the current library representation of
+a table: buckets containing key/value tuples. Normal table code should keep
+using <code>Table/new</code>, <code>Table/set!</code>, <code>Table/get*</code>, and <code>Table/get-unsafe</code> rather
+than accessing that representation directly.</p>
+<p>Enum serialization uses declared names (<code>Rock</code>, <code>Paper</code>, <code>Scissors</code>), and the
+decoder validates them against the expected enum. <code>=~</code> compares values of this
+same enum; <code>match</code> checks coverage of its variants.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="syntax-and-literals"><a class="header" href="#syntax-and-literals">Syntax and literals</a></h1>
+<p>Calque uses S-expressions. Whitespace separates forms; parentheses make a
+call or special form; square brackets make a vector; braces make a tuple.</p>
+<pre><code class="language-que">(+ 1 2)
+(let xs [1 2 3])
+(let point {10 20})
+</code></pre>
+<h2 id="literals"><a class="header" href="#literals">Literals</a></h2>
+<pre><code class="language-que">42             ; Int
+-7             ; Int
+3.14           ; Dec
+true           ; Bool
+false          ; Bool
+nil            ; unit, type ()
+'a'            ; Char
+'\n'           ; newline Char
+"hello"        ; [Char]
+</code></pre>
+<p>Comments begin with <code>;</code> and end at the line boundary:</p>
+<pre><code class="language-que">; this is a comment
+(let answer 42) ; so is this
+</code></pre>
+<h2 id="forms-and-patterns"><a class="header" href="#forms-and-patterns">Forms and patterns</a></h2>
+<pre><code class="language-que">(lambda (left right) (+ left right))
+(let {x y} {10 20})
+(let [first second] [10 20])
+(let [head . tail] [1 2 3])
+</code></pre>
+<p>The final rest pattern is primarily useful in parameter/vector destructuring.
+When destructuring requires elements, static analysis may warn unless it can
+prove the source vector has sufficient length.</p>
+<h2 id="operators-are-names"><a class="header" href="#operators-are-names">Operators are names</a></h2>
+<p>Operators are ordinary callable names in prefix position. Their suffix
+communicates their type family:</p>
+<pre><code class="language-que">(+ 1 2)        ; Int
+(+. 1.5 2.0)   ; Dec
+(+# 'A' 1)     ; Char arithmetic
+(= 2 2)        ; Int equality
+(=. 2.0 2.0)   ; Dec equality
+(=# 'x' 'x')   ; Char equality
+(=? true true) ; Bool equality
+</code></pre>
+<p>Enum equality is intentionally separate: <code>(=~ A B)</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="quick-reference"><a class="header" href="#quick-reference">Quick reference</a></h1>
+<h2 id="bind-and-define"><a class="header" href="#bind-and-define">Bind and define</a></h2>
+<pre><code class="language-que">(let name value)
+(mut name value)
+(alter! name value)
+(letrec name (lambda (args) body))
+(sig name Type)
+(enum Name Variant...)
+</code></pre>
+<h2 id="control"><a class="header" href="#control">Control</a></h2>
+<pre><code class="language-que">(if test yes no)
+(cond test value ... default)
+(when test body...)
+(unless test body...)
+(while test body...)
+(loop i test body...)
+(block body...)
+(do body...)
+</code></pre>
+<h2 id="vectors-and-tuples"><a class="header" href="#vectors-and-tuples">Vectors and tuples</a></h2>
+<pre><code class="language-que">[a b c]
+{a b}
+(length xs)
+(get xs i)
+(set! xs i value)
+(push! xs value)
+(pop! xs)
+(empty! xs)
+(capacity! xs n)
+</code></pre>
+<h2 id="functions-and-composition"><a class="header" href="#functions-and-composition">Functions and composition</a></h2>
+<pre><code class="language-que">(lambda (x) body)
+(lambda (x y) body)
+(|&gt; value (map f) sum)
+(&lt;| value f g)
+(comp f g h)
+(apply f arg...)
+</code></pre>
+<h2 id="static-inspection"><a class="header" href="#static-inspection">Static inspection</a></h2>
+<pre><code class="language-sh">que file.que --debug
+que file.que --opt
+que file.que --emit types
+que explain file.que --opt
+que fmt file.que
+que --lib types 'pattern*'
+</code></pre>
+<p>For the complete current library surface, <code>que --lib types</code> is the reference.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="pitfalls-and-style"><a class="header" href="#pitfalls-and-style">Pitfalls and style</a></h1>
+<h2 id="develop-safely-release-deliberately"><a class="header" href="#develop-safely-release-deliberately">Develop safely, release deliberately</a></h2>
+<p>Use <code>--debug</code> while building and testing. It enables configured runtime guards
+and emits static-analysis findings. Use <code>--opt</code> once your program’s bounds and
+arithmetic invariants are established, then benchmark the real workload.</p>
+<h2 id="common-pitfalls"><a class="header" href="#common-pitfalls">Common pitfalls</a></h2>
+<ul>
+<li><code>do</code> sequences but does not introduce lexical scope; use <code>block</code> for local
+branch/loop bindings.</li>
+<li><code>get</code>, <code>car</code>, <code>pop!</code>, and <code>pop-val!</code> require a non-empty/in-bounds vector.
+In optimized code, prove or guard that fact yourself.</li>
+<li><code>Int</code> is signed <code>i32</code>; large addition, multiplication, and division deserve
+an explicit invariant or a <code>*/safe?</code>, <code>+/safe?</code>, or <code>/safe?</code> guard.</li>
+<li>A missing function argument is partial application, not necessarily an
+immediate error.</li>
+<li><code>deserialize</code> needs a concrete expected result type; put <code>sig</code> immediately
+before its binding.</li>
+<li>Use <code>=~</code> rather than <code>=</code> for values from an enum.</li>
+<li><code>Table/get</code> exposes an entry-vector form. Prefer <code>Table/get*</code> or
+<code>Table/get-unsafe</code> after <code>Table/has?</code> if you want a value.</li>
+</ul>
+<h2 id="style"><a class="header" href="#style">Style</a></h2>
+<ul>
+<li>Prefer pipelines for a readable data transformation.</li>
+<li>Prefer explicit loops and mutation for a hot, allocation-sensitive kernel.</li>
+<li>Cache repeated lengths or computed values in hot loops.</li>
+<li>Use names ending in <code>!</code> for mutating/effectful user functions.</li>
+<li>Put data last in transform-style helpers and collection first in mutators.</li>
+<li>Start a performance-sensitive file with <code>; use-strict-warnings!</code> and inspect
+<code>que explain</code> before treating an optimization as established.</li>
+<li>Keep a reduced program when you find a compiler bug; debug/opt/native target
+agreement is part of the compiler’s correctness contract.</li>
+</ul>
+
+                    </main>
+
+                    <nav class="nav-wrapper" aria-label="Page navigation">
+                        <!-- Mobile navigation buttons -->
+
+
+                        <div style="clear: both"></div>
+                    </nav>
+                </div>
+            </div>
+
+            <nav class="nav-wide-wrapper" aria-label="Page navigation">
+
+            </nav>
+
+        </div>
+
+        <template id=fa-eye><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 576 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM432 256c0 79.5-64.5 144-144 144s-144-64.5-144-144s64.5-144 144-144s144 64.5 144 144zM288 192c0 35.3-28.7 64-64 64c-11.5 0-22.3-3-31.6-8.4c-.2 2.8-.4 5.5-.4 8.4c0 53 43 96 96 96s96-43 96-96s-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6z"/></svg></span></template>
+        <template id=fa-eye-slash><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M38.8 5.1C28.4-3.1 13.3-1.2 5.1 9.2S-1.2 34.7 9.2 42.9l592 464c10.4 8.2 25.5 6.3 33.7-4.1s6.3-25.5-4.1-33.7L525.6 386.7c39.6-40.6 66.4-86.1 79.9-118.4c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C465.5 68.8 400.8 32 320 32c-68.2 0-125 26.3-169.3 60.8L38.8 5.1zM223.1 149.5C248.6 126.2 282.7 112 320 112c79.5 0 144 64.5 144 144c0 24.9-6.3 48.3-17.4 68.7L408 294.5c5.2-11.8 8-24.8 8-38.5c0-53-43-96-96-96c-2.8 0-5.6 .1-8.4 .4c5.3 9.3 8.4 20.1 8.4 31.6c0 10.2-2.4 19.8-6.6 28.3l-90.3-70.8zm223.1 298L373 389.9c-16.4 6.5-34.3 10.1-53 10.1c-79.5 0-144-64.5-144-144c0-6.9 .5-13.6 1.4-20.2L83.1 161.5C60.3 191.2 44 220.8 34.5 243.7c-3.3 7.9-3.3 16.7 0 24.6c14.9 35.7 46.2 87.7 93 131.1C174.5 443.2 239.2 480 320 480c47.8 0 89.9-12.9 126.2-32.5z"/></svg></span></template>
+        <template id=fa-copy><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M502.6 70.63l-61.25-61.25C435.4 3.371 427.2 0 418.7 0H255.1c-35.35 0-64 28.66-64 64l.0195 256C192 355.4 220.7 384 256 384h192c35.2 0 64-28.8 64-64V93.25C512 84.77 508.6 76.63 502.6 70.63zM464 320c0 8.836-7.164 16-16 16H255.1c-8.838 0-16-7.164-16-16L239.1 64.13c0-8.836 7.164-16 16-16h128L384 96c0 17.67 14.33 32 32 32h47.1V320zM272 448c0 8.836-7.164 16-16 16H63.1c-8.838 0-16-7.164-16-16L47.98 192.1c0-8.836 7.164-16 16-16H160V128H63.99c-35.35 0-64 28.65-64 64l.0098 256C.002 483.3 28.66 512 64 512h192c35.2 0 64-28.8 64-64v-32h-47.1L272 448z"/></svg></span></template>
+        <template id=fa-play><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M73 39c-14.8-9.1-33.4-9.4-48.5-.9S0 62.6 0 80V432c0 17.4 9.4 33.4 24.5 41.9s33.7 8.1 48.5-.9L361 297c14.3-8.7 23-24.2 23-41s-8.7-32.2-23-41L73 39z"/></svg></span></template>
+        <template id=fa-clock-rotate-left><span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M75 75L41 41C25.9 25.9 0 36.6 0 57.9V168c0 13.3 10.7 24 24 24H134.1c21.4 0 32.1-25.9 17-41l-30.8-30.8C155 85.5 203 64 256 64c106 0 192 86 192 192s-86 192-192 192c-40.8 0-78.6-12.7-109.7-34.4c-14.5-10.1-34.4-6.6-44.6 7.9s-6.6 34.4 7.9 44.6C151.2 495 201.7 512 256 512c141.4 0 256-114.6 256-256S397.4 0 256 0C185.3 0 121.3 28.7 75 75zm181 53c-13.3 0-24 10.7-24 24V256c0 6.4 2.5 12.5 7 17l72 72c9.4 9.4 24.6 9.4 33.9 0s9.4-24.6 0-33.9l-65-65V152c0-13.3-10.7-24-24-24z"/></svg></span></template>
+
+
+
+        <script>
+            window.playground_copyable = true;
+        </script>
+
+
+        <script src="elasticlunr-ef4e11c1.min.js"></script>
+        <script src="mark-09e88c2c.min.js"></script>
+        <script src="searcher-09f2665d.js"></script>
+
+        <script src="clipboard-1626706a.min.js"></script>
+        <script src="highlight-abc7f01d.js"></script>
+        <script src="book-609e4cb8.js"></script>
+
+        <!-- Custom JS scripts -->
+        <script src="theme/calque-highlight-1443d53c.js"></script>
+
+        <script>
+        window.addEventListener('load', function() {
+            window.setTimeout(window.print, 100);
+        });
+        </script>
+
+
+    </div>
+    </body>
+</html>
