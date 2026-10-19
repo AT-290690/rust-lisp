@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -206,16 +206,19 @@ and <code>when-not</code> are for effects: their implicit false branch is <code>
 introduces and updates its named counter for you:</p>
 <pre><code class="language-que">(mut i 0)
 (while (&lt; i 3)
-  (println! i)
+  (println! (Integer-&gt;String i))
   (++ i))
 
 (loop i (&lt; i 3)
-  (println! i))
+  (println! (Integer-&gt;String i)))
 </code></pre>
+<p><code>println!</code> has type <code>[Char] -&gt; ()</code>: convert an <code>Int</code> with
+<code>Integer-&gt;String</code>, or build text with functions such as <code>join</code>.</p>
 <p>There are library macros for common forms:</p>
-<pre><code class="language-que">(loop/for i 1 (&lt;= i 10) (++ i) (println! i))
-(loop/in value [10 20 30] (println! value))
-(loop/in/i (value index) [10 20] (println! {index value}))
+<pre><code class="language-que">(loop/for i 1 (&lt;= i 10) (++ i) (println! (Integer-&gt;String i)))
+(loop/in value [10 20 30] (println! (Integer-&gt;String value)))
+(loop/in/i index value [10 20]
+  (println! (join ":" [(Integer-&gt;String index) (Integer-&gt;String value)])))
 (times 3 (println! "tick"))
 </code></pre>
 <p>The correctness analyser recognizes many counter loops and can show the

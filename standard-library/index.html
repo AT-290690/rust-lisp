@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -192,6 +192,38 @@ on your machine is the authoritative source for exact signatures and source:</p>
 que --lib types 'Table/*'
 que --lib source Table/update-or!
 </code></pre>
+<h2 id="common-functions"><a class="header" href="#common-functions">Common functions</a></h2>
+<p>Most Calque programs use a fairly small part of the library. Start with these
+names; the sections below remain the complete family index, and <a href="by-example.html">Functions by
+example</a> shows each of these patterns in runnable code.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Need</th><th>Start with</th></tr>
+</thead>
+<tbody>
+<tr><td>Build integer data</td><td><code>range</code>, <code>range/exclusive</code>, <code>fill</code>, <code>replicate</code></td></tr>
+<tr><td>Transform or retain vector values</td><td><code>map</code>, <code>map/i</code>, <code>filter</code> (or <code>select</code>), <code>exclude</code>, <code>flat-map</code></td></tr>
+<tr><td>Visit for effects</td><td><code>for</code>, <code>each</code>, <code>for/i</code>, <code>each/i</code></td></tr>
+<tr><td>Combine or inspect values</td><td><code>reduce</code>, <code>sum</code>, <code>product</code>, <code>count</code>, <code>find</code>, <code>some?</code>, <code>every?</code>, <code>minimum</code>, <code>maximum</code></td></tr>
+<tr><td>Reshape a vector</td><td><code>reverse</code>, <code>flat</code>, <code>zip</code>, <code>unzip</code>, <code>slice</code>, <code>take/first</code>, <code>drop/first</code>, <code>partition</code></td></tr>
+<tr><td>Order or classify values</td><td><code>sort</code>, <code>group</code>, <code>unique/int</code>, <code>unique/char</code></td></tr>
+<tr><td>Parse or assemble text</td><td><code>split</code>, <code>split/lines</code>, <code>split/words</code>, <code>trim</code>, <code>join</code>, <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code></td></tr>
+<tr><td>Use key-value data</td><td><code>Table/new</code>, <code>Table/set!</code>, <code>Table/get</code>, <code>Table/has?</code>, <code>Table/entries</code>, <code>Table/update-or!</code>, <code>Table/count</code></td></tr>
+<tr><td>Work directly with a vector</td><td><code>length</code>, <code>get</code>, <code>set!</code>, <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>in-bounds?</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The usual collection convention is <strong>data last</strong>, so calls compose through
+<code>|&gt;</code>:</p>
+<pre><code class="language-que">(|&gt; [1 2 3 4]
+    (map (lambda (x) (* x x)))
+    (filter (lambda (x) (&gt; x 4)))
+    sum)
+; 25
+</code></pre>
+<p><code>get</code>, <code>pop-val!</code>, <code>first</code>, and <code>last</code> require a valid value. When an index or
+input length is dynamic, check it with <code>in-bounds?</code> or use <code>Vector/get*</code>.</p>
 <h2 id="core-language-operations"><a class="header" href="#core-language-operations">Core language operations</a></h2>
 <p>The compiler provides vector and tuple primitives: <code>length</code>, <code>get</code>, <code>set!</code>,
 <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>car</code>, <code>cdr</code>, <code>cons</code>,

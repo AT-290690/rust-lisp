@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -224,17 +224,120 @@ fixed-point <code>i32</code>, not an <code>f64</code>. Calque’s managed repres
 the runtime: a host returning a managed value must construct a valid Calque heap
 object, while managed values received from Calque are borrowed unless the host
 explicitly retains them using the runtime convention.</p>
-<h2 id="built-in-host-operations"><a class="header" href="#built-in-host-operations">Built-in host operations</a></h2>
-<p>The standard runtime integration supplies typed host imports for file, stdin,
-terminal, clock, serialization, and randomness operations, including:</p>
-<pre><code class="language-text">read!             read/chunks!       read/lines!        list-dir!
-stdin!            stdin/chunks!      write!             mkdir!
-move!             delete!            print!             println!
-clear!            sleep!             time!              random!
-serialize         deserialize
+<h2 id="built-in-effect-operations"><a class="header" href="#built-in-effect-operations">Built-in effect operations</a></h2>
+<p>The normal <code>que</code> runner supplies these operations through its WASI adapter.
+They have ordinary, statically checked Calque types; <code>!</code> marks the operations
+that perform an external effect. <code>println!</code> is the standard-library convenience
+form of <code>print!</code> plus a newline, but has the same source-level type.</p>
+<h3 id="files-and-directories"><a class="header" href="#files-and-directories">Files and directories</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>read!</code></td><td><code>[Char] -&gt; [Char]</code></td><td><code>read</code></td><td>Read a complete text file.</td></tr>
+<tr><td><code>list-dir!</code></td><td><code>[Char] -&gt; [[Char]]</code></td><td><code>read</code></td><td>List directory-entry names.</td></tr>
+<tr><td><code>read/chunks!</code></td><td><code>[Char] -&gt; Int -&gt; ([Char] -&gt; Bool) -&gt; Bool</code></td><td><code>read</code></td><td>Visit successive text chunks.</td></tr>
+<tr><td><code>read/lines!</code></td><td><code>[Char] -&gt; ([Char] -&gt; Bool) -&gt; Bool</code></td><td><code>read</code></td><td>Visit successive lines, without newline terminators.</td></tr>
+<tr><td><code>write!</code></td><td><code>[Char] -&gt; [Char] -&gt; ()</code></td><td><code>write</code></td><td>Write text to a path.</td></tr>
+<tr><td><code>mkdir!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>write</code></td><td>Create a directory path.</td></tr>
+<tr><td><code>move!</code></td><td><code>[Char] -&gt; [Char] -&gt; ()</code></td><td><code>write</code></td><td>Rename or move a path.</td></tr>
+<tr><td><code>delete!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>delete</code></td><td>Delete a file or directory path.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Paths and text are both <code>[Char]</code>, normally written as string literals:</p>
+<pre><code class="language-que">(let config (read! "config.txt"))
+(write! "copy.txt" config)
+(let names (list-dir! "."))
 </code></pre>
-<p>They are capability-gated under the external WASI runner; see <a href="../language/effects.html">Effects and
-permissions</a>.</p>
+<h3 id="standard-input-and-callbacks"><a class="header" href="#standard-input-and-callbacks">Standard input and callbacks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>stdin!</code></td><td><code>() -&gt; [Char]</code></td><td><code>stdin</code></td><td>Read all standard input as text.</td></tr>
+<tr><td><code>stdin/chunks!</code></td><td><code>Int -&gt; ([Char] -&gt; Bool) -&gt; Bool</code></td><td><code>stdin</code></td><td>Visit standard input in chunks.</td></tr>
+</tbody>
+</table>
+</div>
+<p>All three callback operations—<code>read/chunks!</code>, <code>read/lines!</code>, and
+<code>stdin/chunks!</code>—share one control convention:</p>
+<ul>
+<li>The callback receives a <code>[Char]</code> chunk or line.</li>
+<li>Return <code>false</code> to continue.</li>
+<li>Return <code>true</code> to stop early.</li>
+<li>The operation itself returns <code>true</code> when it stopped early and <code>false</code> when it
+reached end of input.</li>
+</ul>
+<p>Chunk size must be positive. For example, print at most ten lines:</p>
+<pre><code class="language-que">(&amp;mut seen 0)
+(let stopped?
+  (read/lines! "input.txt"
+    (lambda (line)
+      (&amp;alter! seen (+ (&amp;get seen) 1))
+      (println! line)
+      (&gt;= (&amp;get seen) 10))))
+</code></pre>
+<p>The callback API avoids constructing a vector of all lines or chunks. The
+current external WASI adapter reads its input text before it partitions it for
+callbacks; an embedding or native-C host may stream at the host level. Do not
+assume the callback spelling alone guarantees bounded host-side input memory on
+every target.</p>
+<h3 id="terminal-and-clock"><a class="header" href="#terminal-and-clock">Terminal and clock</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>print!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>print</code></td><td>Print text without adding a newline.</td></tr>
+<tr><td><code>println!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>print</code></td><td>Print text followed by a newline.</td></tr>
+<tr><td><code>clear!</code></td><td><code>() -&gt; ()</code></td><td><code>print</code></td><td>Request a terminal clear.</td></tr>
+<tr><td><code>sleep!</code></td><td><code>Int -&gt; ()</code></td><td><code>clock</code></td><td>Sleep for a non-negative number of milliseconds.</td></tr>
+<tr><td><code>time!</code></td><td><code>() -&gt; Int</code></td><td><code>clock</code></td><td>Current wall-clock time in whole Unix seconds.</td></tr>
+<tr><td><code>random!</code></td><td><code>() -&gt; Int</code></td><td><code>clock</code></td><td>Get one host-provided random <code>Int</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>println!</code> accepts text, not an arbitrary value. Convert an integer explicitly:</p>
+<pre><code class="language-que">(println! (Integer-&gt;String (time!)))
+(sleep! 250)
+</code></pre>
+<p><code>random!</code> is effectful host randomness. The library’s <code>random</code>, <code>random/int</code>,
+<code>random.</code>, and <code>random/dec</code> are separate deterministic seed-to-next-state
+functions for reproducible computations.</p>
+<h3 id="serialization"><a class="header" href="#serialization">Serialization</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>serialize</code></td><td><code>T -&gt; [Char]</code></td><td>none</td><td>Convert a statically known supported Calque value to text.</td></tr>
+<tr><td><code>deserialize</code></td><td><code>[Char] -&gt; T</code></td><td>none</td><td>Decode text as the statically expected type.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>deserialize</code> cannot infer a target type from characters alone. State the
+expected result with <code>sig</code> before the binding:</p>
+<pre><code class="language-que">(let saved (serialize {42 "Ada"}))
+
+(sig restored {Int [Char]})
+(let restored (deserialize saved))
+; {42 "Ada"}
+</code></pre>
+<p>Enums serialize by their declared variant name and are checked against the
+expected enum on decode. See <a href="../examples/enum-table-serialization.html">Enum-keyed table round trip</a>
+for a table example.</p>
+<p>Run a program using an operation only after granting the matching capability:</p>
+<pre><code class="language-sh">que program.que --allow read write print
+</code></pre>
+<p><code>--allow all</code> grants every group. See <a href="../language/effects.html">Effects and permissions</a>
+for the short permission overview.</p>
 <h2 id="custom-hosts"><a class="header" href="#custom-hosts">Custom hosts</a></h2>
 <p>The normal <code>que</code> runner delegates to an external WASI runtime. It can run the
 built-in operations through Calque’s WASI adapter, but it does not load arbitrary

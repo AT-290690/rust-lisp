@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -213,6 +213,43 @@ are provided for the library’s set representation. As with tables, query the
 specific function type for the accepted key kind:</p>
 <pre><code class="language-sh">que --lib types 'Set/*'
 </code></pre>
+<h3 id="set-algebra"><a class="header" href="#set-algebra">Set algebra</a></h3>
+<p><code>Set/intersection</code>, <code>Set/union</code>, <code>Set/difference</code>, and <code>Set/xor</code> each create a
+new set; neither input set is changed. Let <code>A = {"red", "blue", "green"}</code>
+and <code>B = {"green", "gold"}</code>:</p>
+<img class="set-algebra-diagram" src="../images/set-algebra.svg" alt="Venn diagrams for intersection, union, difference, and xor">
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Mathematical meaning</th><th>With <code>A</code> and <code>B</code></th></tr>
+</thead>
+<tbody>
+<tr><td><code>(Set/intersection A B)</code></td><td>values in both sets, <code>A ∩ B</code></td><td><code>{"green"}</code></td></tr>
+<tr><td><code>(Set/union A B)</code></td><td>values in either set, <code>A ∪ B</code></td><td><code>{"red", "blue", "green", "gold"}</code></td></tr>
+<tr><td><code>(Set/difference A B)</code></td><td>values in the first but not the second, <code>A \ B</code></td><td><code>{"red", "blue"}</code></td></tr>
+<tr><td><code>(Set/xor A B)</code></td><td>values in exactly one input, <code>(A \ B) ∪ (B \ A)</code></td><td><code>{"red", "blue", "gold"}</code></td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-que">(let A (Vector-&gt;Set ["red" "blue" "green"]))
+(let B (Vector-&gt;Set ["green" "gold"]))
+
+(let common (Set/intersection A B))
+(let all (Set/union A B))
+(let only-A (Set/difference A B))
+(let exclusive (Set/xor A B))
+
+{ (Set/has? "green" common)    ; true
+  (Set/has? "red" common)      ; false
+  (Set/has? "gold" all)        ; true
+  (Set/has? "blue" only-A)     ; true
+  (Set/has? "green" exclusive)} ; false
+</code></pre>
+<p><code>Set/difference</code> is directional: swapping its arguments changes the result.
+<code>Set/xor</code> is symmetric, so <code>(Set/xor A B)</code> and <code>(Set/xor B A)</code> contain the
+same members. A set’s bucket layout does not promise a presentation order; if
+you need a deterministic displayed vector, convert with <code>Set-&gt;Vector</code> and sort
+the result.</p>
 <h2 id="heap-and-deque"><a class="header" href="#heap-and-deque">Heap and deque</a></h2>
 <p><code>Heap/*</code> implements a mutable binary heap using a caller-supplied comparison
 predicate. <code>Que/*</code> provides a deque-like structure backed by vectors, with

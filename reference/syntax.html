@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -206,12 +206,13 @@ nil            ; unit, type ()
 <h2 id="forms-and-patterns"><a class="header" href="#forms-and-patterns">Forms and patterns</a></h2>
 <pre><code class="language-que">(lambda (left right) (+ left right))
 (let {x y} {10 20})
-(let [first second] [10 20])
-(let [head . tail] [1 2 3])
+(let [a b] [10 20])
+(let [a . tail] [1 2 3])
 </code></pre>
-<p>The final rest pattern is primarily useful in parameter/vector destructuring.
-When destructuring requires elements, static analysis may warn unless it can
-prove the source vector has sufficient length.</p>
+<p>The final rest pattern works in <code>let</code> and lambda vector destructuring. It
+binds the remaining tail after the fixed positions. When destructuring requires
+elements, static analysis may warn unless it can prove the source vector has
+sufficient length.</p>
 <h2 id="operators-are-names"><a class="header" href="#operators-are-names">Operators are names</a></h2>
 <p>Operators are ordinary callable names in prefix position. Their suffix
 communicates their type family:</p>
@@ -224,6 +225,52 @@ communicates their type family:</p>
 (=? true true) ; Bool equality
 </code></pre>
 <p>Enum equality is intentionally separate: <code>(=~ A B)</code>.</p>
+<h2 id="naming-conventions"><a class="header" href="#naming-conventions">Naming conventions</a></h2>
+<p>Names are ordinary identifiers, so these spellings are conventions with useful
+semantic meaning—not a separate method syntax. Follow them for library and
+application APIs so callers can understand an operation before opening its
+implementation.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Form</th><th>Convention</th><th>Examples</th></tr>
+</thead>
+<tbody>
+<tr><td><code>name?</code></td><td>Returns a <code>Bool</code>; asks a question or establishes a condition.</td><td><code>empty?</code>, <code>Table/has?</code>, <code>+/safe?</code>, <code>in-bounds?</code></td></tr>
+<tr><td><code>name!</code></td><td>Performs an observable effect: usually mutation, sometimes host I/O.</td><td><code>push!</code>, <code>set!</code>, <code>capacity!</code>, <code>read!</code>, <code>println!</code></td></tr>
+<tr><td><code>name/i</code></td><td>An index-aware collection variant; it receives the element and its index.</td><td><code>map/i</code>, <code>select/i</code>, <code>every/i?</code></td></tr>
+<tr><td><code>Namespace/name</code></td><td>A namespace-like library family; it is still one ordinary identifier.</td><td><code>Table/get</code>, <code>String/contains?</code>, <code>Vector/sort!</code></td></tr>
+<tr><td><code>From-&gt;To</code></td><td>Explicit conversion between representations or numeric families.</td><td><code>String-&gt;Integer</code>, <code>Int-&gt;Dec</code>, <code>Char-&gt;Int</code></td></tr>
+<tr><td><code>name/raw</code></td><td>Internal or lower-level helper. Prefer the corresponding public API unless you need its precise representation contract.</td><td><code>Vector/append/raw!</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>!</code> does <strong>not</strong> mean only “changes its first argument.” <code>push!</code> and <code>set!</code>
+mutate a collection, while <code>read!</code>, <code>println!</code>, <code>sleep!</code>, and <code>random!</code> are
+also bang-named because they interact with the host. The type/effect analysis
+tracks the actual mutation and I/O behavior; the suffix makes that behavior
+visible at the call site.</p>
+<p>Likewise, <code>?</code> says a function’s result is a boolean predicate, not that it is
+necessarily pure. A predicate can be used directly in a condition and some
+recognised guards, such as <code>+/safe?</code> or a conventional <code>in-bounds?</code> helper,
+can refine facts for the static analyser.</p>
+<p>The punctuation suffixes on primitive operators select a value family:</p>
+<pre><code class="language-que">(+ 1 2)        ; Int arithmetic
+(+. 1.5 2.0)   ; Dec arithmetic
+(+# 'A' 1)     ; Char arithmetic
+
+(= 2 2)        ; Int equality
+(=. 2.0 2.0)   ; Dec equality
+(=# 'x' 'x')   ; Char equality
+(=? true true) ; Bool equality
+(=~ Rock Rock) ; enum equality
+</code></pre>
+<p>For the live library surface and exact inferred signatures, query the
+installed compiler rather than guessing from a name:</p>
+<pre><code class="language-sh">que --lib types 'Table/*'
+que --lib types '*safe?'
+que --lib source Vector/sort!
+</code></pre>
 
                     </main>
 

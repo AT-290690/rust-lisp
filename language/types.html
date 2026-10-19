@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -234,6 +234,112 @@ must be the same type, but callers choose that type independently.</p>
 <p>Use a <code>sig</code> when an external boundary needs a concrete type or when you want
 to state the public contract explicitly. See <a href="type-inference.html">Inference and
 signatures</a>.</p>
+<h2 id="hindleymilner-inference-in-calque"><a class="header" href="#hindleymilner-inference-in-calque">Hindley–Milner inference in Calque</a></h2>
+<p>Calque uses Hindley–Milner-style inference: most source programs do not need
+annotations, yet a binding is checked consistently at every use. The
+implementation follows the usual <strong>Algorithm W</strong> shape—fresh type variables,
+constraints, unification, and generalization—while collecting constraints and
+solving them at binding boundaries. This gives better source locations for
+diagnostics than a presentation of the algorithm that only returns a type.</p>
+<h3 id="the-small-mathematical-core"><a class="header" href="#the-small-mathematical-core">The small mathematical core</a></h3>
+<p>The notation below is useful when reading an inferred type or a compiler
+diagnostic:</p>
+<pre><code class="language-text">τ ::= Int | Dec | Bool | Char | () | α
+    | [τ] | {τ τ} | τ -&gt; τ | EnumName
+
+σ ::= ∀α₁ … αₙ. τ
+Γ ⊢ e : τ
+</code></pre>
+<p><code>τ</code> is a monotype, <code>α</code> is an unknown type variable, <code>σ</code> is a polymorphic type
+scheme, and <code>Γ ⊢ e : τ</code> reads “under type environment <code>Γ</code>, expression <code>e</code> has
+type <code>τ</code>.” Calque source prints inferred unknowns as names such as <code>T0</code>; the
+Greek letters are only the conventional mathematical notation.</p>
+<p>For a lambda, the parameter starts with a fresh unknown type:</p>
+<pre><code class="language-text">Γ, x : α ⊢ body : β
+─────────────────────
+Γ ⊢ (lambda (x) body) : α -&gt; β
+</code></pre>
+<p>For an application <code>f x</code>, the compiler creates a fresh result type <code>β</code> and
+requires the type of <code>f</code> to unify with <code>type(x) -&gt; β</code>. Unification recursively
+matches the structure of functions, vectors, and tuples. It includes an
+<em>occurs check</em>, so it cannot invent an infinite type such as <code>α = [α]</code>.</p>
+<p>At a safe <code>let</code> binding, the compiler quantifies the variables that are free
+in the value but not free in the surrounding environment:</p>
+<pre><code class="language-text">generalize(Γ, τ) = ∀(ftv(τ) − ftv(Γ)). τ
+</code></pre>
+<p>For example, the identity function is inferred once as <code>∀α. α -&gt; α</code>; each use
+instantiates <code>α</code> with a fresh unknown, so one call may use <code>Int</code> and another
+may use <code>[Char]</code>.</p>
+<pre><code class="language-que">(let id (lambda (x) x))
+{(id 42) (id "Calque")}
+; {Int [Char]}
+</code></pre>
+<p>There is no implicit numeric subtyping or promotion in these rules. <code>Int</code> and
+<code>Dec</code> unify only with themselves; use an explicit conversion when crossing
+that boundary.</p>
+<h3 id="product-vector-and-enum-types"><a class="header" href="#product-vector-and-enum-types">Product, vector, and enum types</a></h3>
+<p>HM’s core is deliberately small. Calque extends its type grammar with the
+following structural and nominal types.</p>
+<p><strong>Vectors are homogeneous.</strong> <code>[T]</code> has exactly one element type. A vector
+literal adds a constraint that every element has that same type:</p>
+<pre><code class="language-que">(let scores [10 20 30]) ; [Int]
+; [10 true]             ; type error: Int and Bool do not unify
+</code></pre>
+<p>The same relationship is carried through vector operations:</p>
+<pre><code class="language-text">get    : [T] -&gt; Int -&gt; T
+set!   : [T] -&gt; Int -&gt; T -&gt; ()
+push!  : [T] -&gt; T -&gt; ()
+</code></pre>
+<p><strong>Tuples are ordered pairs and may be heterogeneous.</strong> <code>{A B}</code> means the
+first field has type <code>A</code> and the second has type <code>B</code>; unification checks both
+positions independently.</p>
+<pre><code class="language-que">(let entry {"Ada" 37}) ; {[Char] Int}
+</code></pre>
+<p><strong>Enums are nominal, closed types.</strong> An enum declaration makes every variant
+belong to that one named type. Its compact runtime <code>i32</code> tag does not make it
+an <code>Int</code> at the language level. <code>=~</code> requires both operands to have the same
+enum type, and <code>match</code> checks coverage of that closed variant set. See <a href="enums.html">Enums
+and matching</a>.</p>
+<h3 id="mutation-and-the-value-restriction"><a class="header" href="#mutation-and-the-value-restriction">Mutation and the value restriction</a></h3>
+<p>Plain HM generalizes every suitable <code>let</code>. That is unsound in the presence of
+mutable containers: if an empty vector were independently polymorphic at each
+use, one use could store an <code>Int</code> and another could read it as a <code>Bool</code>.</p>
+<p>Calque therefore uses a value restriction. It generalizes non-expansive
+bindings—such as literals, names, and lambdas—but an allocating expression
+such as a vector is kept monomorphic for its binding. Its element type is
+still inferred; it is simply shared by every later mutation.</p>
+<pre><code class="language-que">(let xs [])
+(push! xs 1)       ; fixes xs as [Int]
+; (push! xs true)  ; type error
+</code></pre>
+<p><code>mut</code> bindings are monomorphic by design and retain one type throughout their
+updates:</p>
+<pre><code class="language-que">(mut total 0)
+(alter! total (+ total 1))
+; (alter! total true) ; type error
+</code></pre>
+<p>The <code>&amp;mut</code>, <code>&amp;get</code>, and <code>&amp;alter!</code> forms are library macros over an ordinary
+one-element vector cell, so they inherit the same vector constraints rather
+than introducing a hidden second reference type.</p>
+<p>Effects are tracked alongside inferred expressions as compiler metadata:
+pure, mutation, host I/O, or an unknown call. They help diagnostics,
+permission checking, and optimization, but they are <strong>not</strong> currently an
+effect-row type system: an arrow such as <code>Int -&gt; Int</code> does not encode an
+effect. See <a href="effects.html">Effects and permissions</a>.</p>
+<h3 id="recursion-macros-and-signatures"><a class="header" href="#recursion-macros-and-signatures">Recursion, macros, and signatures</a></h3>
+<p>For <code>letrec</code>, Calque first binds the recursive name to a fresh monomorphic
+placeholder, infers its value, and then unifies the placeholder with that
+value. This is why a recursive call must agree with the function being
+defined. <code>letrec</code> is intended for self-recursive functions; mutually recursive
+definitions do not have a separate forward-declaration form.</p>
+<p>Macros expand before inference. The expanded ordinary Calque expression is
+what receives these HM constraints, which keeps macros syntactic rather than
+an untyped escape hatch.</p>
+<p><code>sig</code> writes a contract in the same type language and verifies the inferred
+binding against it. It is useful for public APIs and for boundaries such as
+<code>deserialize</code>, where the desired result type cannot be recovered from the
+serialized text alone. See <a href="type-inference.html">Inference and signatures</a> for
+the syntax and diagnostics.</p>
 
                     </main>
 

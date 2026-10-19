@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -209,6 +209,27 @@ same basic read operations work on both.</p>
 (at xs -1)              ; 30 — negative indexing helper
 (cons [0] xs)           ; [0 10 20 30] — concatenate two vectors
 </code></pre>
+<h3 id="car-cdr-and-tail-windows"><a class="header" href="#car-cdr-and-tail-windows"><code>car</code>, <code>cdr</code>, and tail windows</a></h3>
+<p><code>car</code> reads the first element: it is the head-oriented spelling of
+<code>(get xs 0)</code>. <code>cdr</code> creates a <strong>tail window</strong>. <code>(cdr xs)</code> starts at offset
+<code>1</code>; <code>(cdr xs n)</code> starts at offset <code>n</code>. The window has its own logical index
+zero, so it is useful for head-and-tail recursion without copying every tail.</p>
+<pre><code class="language-que">(let xs [10 20 30 40])
+(let tail (cdr xs 2))
+
+(get tail 0)            ; 30
+(length tail)           ; 2
+
+(set! tail 0 99)
+{xs tail}
+; { [10 20 30 40] [99 40] }
+</code></pre>
+<p>Initially, a <code>cdr</code> result shares the source vector’s backing storage. The
+first mutation of the tail materializes an independent vector, so changing
+<code>tail</code> does not change <code>xs</code>. Conversely, retaining a small tail also retains
+the original allocation until the tail is released or materialized. Use
+<code>slice</code> when a fresh copied subvector is the clearer or more appropriate
+representation.</p>
 <p><code>get</code>, <code>car</code>, <code>first</code>, <code>last</code>, and <code>pop-val!</code> require a valid, non-empty
 input. For a dynamic index, use <code>in-bounds?</code>, <code>Vector/get*</code>, or structure the
 loop so the analyser can prove the access.</p>

@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -214,6 +214,75 @@ error easier to understand after looking at that expansion.</p>
 new binding structure, control flow, or syntactic rearrangement. Keep macro
 expansions small, hygienic in spirit, and transparent enough that the expanded
 form remains ordinary, type-checkable Calque.</p>
+<h2 id="writing-a-macro"><a class="header" href="#writing-a-macro">Writing a macro</a></h2>
+<p>A macro transformer receives the <strong>written syntax</strong> at its call site and must
+return replacement syntax. The smallest form uses a lambda transformer and
+quasiquote:</p>
+<pre><code class="language-que">(letmacro add1
+  (lambda (x)
+    (qq (+ (uq x) 1))))
+
+(add1 41)
+; expands to: (+ 41 1)
+; 42
+</code></pre>
+<p><code>qq</code> constructs the output program. Inside it, ordinary words and lists are
+literal output syntax. <code>(uq x)</code> inserts the single syntax form supplied as
+<code>x</code>; it does <strong>not</strong> evaluate that form. In the example, <code>(add1 (+ 20 21))</code>
+becomes <code>(+ (+ 20 21) 1)</code>, then normal type checking and evaluation happen.</p>
+<p>Macros can also use pattern clauses. This version of <code>unless</code> accepts zero or
+more body forms, and uses <code>uqs</code> to splice all of them into the generated
+<code>do</code>:</p>
+<pre><code class="language-que">(letmacro unless*
+  (()
+    (qq nil))
+  ((test . body)
+    (qq (if (uq test) nil (do (uqs body))))))
+
+(mut total 0)
+(unless* false
+  (++ total)
+  (++ total))
+total
+; 2
+</code></pre>
+<p>Use <code>uq</code> for one expression and <code>uqs</code> only where a surrounding list or body
+accepts several forms. The rest pattern <code>. body</code> is syntax-list rest capture;
+it is not a runtime vector value.</p>
+<h3 id="generated-bindings-and-gensym"><a class="header" href="#generated-bindings-and-gensym">Generated bindings and <code>gensym</code></a></h3>
+<p>If a macro introduces a local name, create it with <code>gensym</code>. It produces a
+fresh identifier, avoiding accidental capture of a caller’s name. This macro
+evaluates its input once, then reads its final element:</p>
+<pre><code class="language-que">(letmacro last-item
+  (lambda (xs)
+    (do
+      (let values (gensym))
+      (qq
+        (block
+          (let (uq values) (uq xs))
+          (get (uq values) (- (length (uq values)) 1)))))))
+
+(last-item [10 20 30])
+; 30
+</code></pre>
+<p>The generated <code>values</code> cannot collide with a caller’s <code>values</code> binding. Like
+<code>car</code>, this macro requires a non-empty vector; macros preserve the ordinary
+runtime and static-safety rules of the forms they expand to.</p>
+<h3 id="syntax-time-helpers"><a class="header" href="#syntax-time-helpers">Syntax-time helpers</a></h3>
+<p>For macros that inspect or rebuild an arbitrary syntax list, use the
+syntax-only helpers <code>syntax/list?</code>, <code>syntax/empty?</code>, <code>syntax/head</code>,
+<code>syntax/tail</code>, <code>syntax/prepend</code>, <code>syntax/append</code>, <code>syntax/word?</code>, and
+<code>syntax/word=?</code>. They are available only while a <code>letmacro</code> expands; they are
+not runtime data-structure functions. The implementation of <code>|&gt;</code> in the
+bundled library is the reference example of this more advanced style.</p>
+<h2 id="debugging-an-expansion"><a class="header" href="#debugging-an-expansion">Debugging an expansion</a></h2>
+<p>Define a macro before its use, keep its expansion small, and inspect what the
+compiler will receive when a type error is unclear:</p>
+<pre><code class="language-sh">que program.que --emit source
+</code></pre>
+<p>The result is expanded Calque source. It is particularly useful for checking
+<code>uq</code> versus <code>uqs</code>, generated bindings, and a macro that introduces control
+flow. The expanded result must still type-check like handwritten Calque.</p>
 
                     </main>
 

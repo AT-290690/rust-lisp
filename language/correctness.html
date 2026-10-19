@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -193,6 +193,125 @@ que explain program.que --opt --json
 </code></pre>
 <p>The report groups warnings before termination, effects and permissions,
 performance observations, and generated-code details.</p>
+<h2 id="reading-que-explain"><a class="header" href="#reading-que-explain">Reading <code>que explain</code></a></h2>
+<p><code>que explain</code> is the programmer-facing view of the typed program, static
+proofs, and generated WAT shape. It does not run the program or benchmark it.
+Use <code>--opt</code> when you want its generated-code and performance observations to
+describe the optimized build you intend to run:</p>
+<pre><code class="language-sh">que explain program.que --opt
+que explain program.que --opt --json --out explain.json
+</code></pre>
+<p>The text report has these sections:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Section</th><th>What it tells you</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Result type</strong></td><td>The inferred type of the final user expression.</td></tr>
+<tr><td><strong>Correctness</strong></td><td>Static arithmetic/bounds warnings, source locations, suggestions, and successful bounds proofs.</td></tr>
+<tr><td><strong>Termination</strong></td><td>A proven or unknown result for analysed loops and recursive functions, including the inferred measure when available.</td></tr>
+<tr><td><strong>Effects and permissions</strong></td><td>The combined effect (<code>pure</code>, mutation, host I/O, or unknown call) and required host imports.</td></tr>
+<tr><td><strong>Performance</strong></td><td>A static count of allocations, dynamic applies, checked/unchecked reads, direct calls, and WAT bytes.</td></tr>
+<tr><td><strong>Generated code</strong></td><td>Per-function allocation and call details, plus inferred source-form types and effects.</td></tr>
+</tbody>
+</table>
+</div>
+<p>For a safe counted access, the useful part looks conceptually like this:</p>
+<pre><code class="language-text">Correctness:
+  Proven bounds:
+    (get xs i) proven safe
+      0 &lt;= i &lt;= 9
+
+Termination:
+  proven terminating: while (&lt; i (length xs))
+    i increases toward the exit bound
+</code></pre>
+<p>The report’s performance section is deliberately <strong>static WAT shape, not a
+runtime profile</strong>. It can identify a remaining allocation or bounds check and
+point toward a useful rewrite, but timing, CPU effects, and allocator behavior
+still require a real benchmark.</p>
+<p><code>--json</code> contains the same information in stable fields such as
+<code>result_type</code>, <code>warnings</code>, <code>bounds_proofs</code>, <code>termination</code>, <code>effect</code>,
+<code>host_imports</code>, <code>metrics</code>, <code>compiled_functions</code>, and <code>optimization_targets</code>.
+That form is intended for editor integrations, CI, and custom reporting.</p>
+<h2 id="the-analysis-model"><a class="header" href="#the-analysis-model">The analysis model</a></h2>
+<p>Type inference answers questions such as “is this value an <code>Int</code> or a
+<code>[Char]</code>?” It cannot answer “can this <code>Int</code> overflow?” or “is this index below
+this particular vector’s length?” Calque runs a second, flow-sensitive static
+analysis after type inference for those questions.</p>
+<p>It is an <strong>abstract interpreter</strong>: it executes a finite mathematical summary
+of the program rather than executing its concrete values. A useful simplified
+view of the state at a program point is:</p>
+<pre><code class="language-text">S = (R, L, A, P)
+
+R(x) = [lower, upper]       possible Int range for x
+L(xs) = n or &gt;= n           known exact or minimum vector length
+A                         symbolic affine relations, such as i &lt; length(xs)
+P                         path facts, aliases, and recognised guard summaries
+</code></pre>
+<p>For example, on the true path of this condition the analyser refines the
+abstract state to include both facts needed by <code>get</code>:</p>
+<pre><code class="language-que">(if (and (&gt;= i 0) (&lt; i (length xs)))
+    (get xs i)
+    fallback)
+</code></pre>
+<pre><code class="language-text">true path:  0 &lt;= i &lt; length(xs)
+therefore:  (get xs i) is proven safe
+</code></pre>
+<p>It keeps bounded alternatives when useful—for example, a value known to be
+negative <em>or</em> positive rather than merely “some <code>Int</code>”—and tracks simple
+affine relations such as <code>a + b &lt;= 2147483647</code>. Arithmetic ranges are
+calculated in a wider analysis domain, then checked against the signed <code>i32</code>
+range used by <code>Int</code>.</p>
+<h3 id="control-flow-and-loops"><a class="header" href="#control-flow-and-loops">Control flow and loops</a></h3>
+<p>The analyser refines facts independently along each branch. Where paths meet,
+it retains only facts that remain valid on every incoming path. Informally:</p>
+<pre><code class="language-text">after (if condition left right) = join(state(left), state(right))
+</code></pre>
+<p>Loops require a fixed point: the body is analysed repeatedly until its summary
+stops gaining useful facts. Widening deliberately broadens a changing range
+when necessary so this process always finishes. That is why Calque can prove
+common counted loops without attempting to solve the halting problem.</p>
+<pre><code class="language-que">(loop i (&lt; i (length xs))
+  (get xs i))
+</code></pre>
+<p>The loop supplies an initial value, condition, and update. The analysis derives
+<code>0 &lt;= i &lt; length(xs)</code> for the body, proves the read safe, and can record the
+counter as moving toward its exit bound.</p>
+<h3 id="proof-outcomes"><a class="header" href="#proof-outcomes">Proof outcomes</a></h3>
+<p>Each checked operation has one of three outcomes:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Result</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>proven safe</strong></td><td>Every abstract execution reaching the operation satisfies the required fact.</td></tr>
+<tr><td><strong>definitely invalid</strong></td><td>Every possible execution violates it, such as a known negative index.</td></tr>
+<tr><td><strong>unknown</strong></td><td>The analysis cannot establish either conclusion with its conservative model.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Only a proven-safe fact is eligible for an optimization such as omitting a
+runtime bounds check. <code>unknown</code> is intentionally not a claim that the program
+fails; write a guard, simplify the shape, or keep the check if the invariant
+lives outside the visible source.</p>
+<p>The same model supports several analyses:</p>
+<ul>
+<li><strong>bounds and non-empty vectors</strong> — <code>get</code>, <code>set!</code>, <code>car</code>, and <code>pop-val!</code>;</li>
+<li><strong>arithmetic</strong> — <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, and <code>%</code>, including a non-zero divisor
+and the special <code>minimum Int / -1</code> overflow case;</li>
+<li><strong>termination evidence</strong> — counted loops and recursive calls whose argument
+is shown to move toward a base-case guard;</li>
+<li><strong>effects</strong> — mutation, host I/O, and calls whose effect cannot yet be
+resolved.</li>
+</ul>
+<p>Recognised helper predicates can carry proof information too. A conventional
+definition such as <code>in-bounds?</code> can establish a later <code>get</code> when its true
+branch is taken, and <code>+/safe?</code> can establish the corresponding guarded
+addition. The analyser is conservative about aliases and mutation: once a
+fact may have been invalidated, it stops relying on it.</p>
 <h2 id="bounds-and-empty-vectors"><a class="header" href="#bounds-and-empty-vectors">Bounds and empty vectors</a></h2>
 <p>The analyser recognizes common loop shapes:</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))

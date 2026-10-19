@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -204,7 +204,8 @@
 <tr><td><code>(pop! xs)</code></td><td>remove the final element</td></tr>
 <tr><td><code>(pop-val! xs)</code></td><td>remove and return the final element</td></tr>
 <tr><td><code>(empty! xs)</code></td><td>set length to zero while retaining allocated capacity</td></tr>
-<tr><td><code>(car xs)</code>, <code>(cdr xs)</code></td><td>first element and tail-style view/copy API</td></tr>
+<tr><td><code>(car xs)</code></td><td>first element; equivalent to <code>(get xs 0)</code></td></tr>
+<tr><td><code>(cdr xs)</code>, <code>(cdr xs n)</code></td><td>tail window from offset <code>1</code> or explicit offset <code>n</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -214,6 +215,11 @@ or structure the loop so that the proof is obvious:</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))
   (println! (get xs i)))
 </code></pre>
+<p><code>cdr</code> initially shares the source vector’s backing storage and shifts the
+logical start index; it does not copy every tail. Mutating that result
+materializes an independent vector, so it cannot change the original. See
+<a href="../standard-library/by-example.html#car-cdr-and-tail-windows">Functions by example</a>
+for a complete example and the retention trade-off.</p>
 <h2 id="tuples"><a class="header" href="#tuples">Tuples</a></h2>
 <p>Tuples are fixed-size heterogeneous values:</p>
 <pre><code class="language-que">(let person {"Ada" 37 true})

@@ -29,7 +29,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-b7e24d2d.js"></script>
+        <script src="toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -211,6 +211,8 @@ declarations where a boundary needs a known type.</li>
 <li>Lexical closures, recursion, partial application, macro expansion, and
 data-last functional APIs.</li>
 <li>Mutable locals and mutable vectors with direct loop constructs.</li>
+<li>Deterministic reference-counted memory for vectors, tuples, and closures;
+source-level reference cycles are rejected.</li>
 <li>Fixed-size <code>Int</code> arithmetic, fixed-point <code>Dec</code>, and compact closed enums.</li>
 <li>Static warnings for likely out-of-bounds access, empty-vector operations,
 unsafe arithmetic, and termination facts that could not be proven.</li>
@@ -440,6 +442,112 @@ must be the same type, but callers choose that type independently.</p>
 <p>Use a <code>sig</code> when an external boundary needs a concrete type or when you want
 to state the public contract explicitly. See <a href="#inference-and-signatures">Inference and
 signatures</a>.</p>
+<h2 id="hindleymilner-inference-in-calque"><a class="header" href="#hindleymilner-inference-in-calque">Hindley–Milner inference in Calque</a></h2>
+<p>Calque uses Hindley–Milner-style inference: most source programs do not need
+annotations, yet a binding is checked consistently at every use. The
+implementation follows the usual <strong>Algorithm W</strong> shape—fresh type variables,
+constraints, unification, and generalization—while collecting constraints and
+solving them at binding boundaries. This gives better source locations for
+diagnostics than a presentation of the algorithm that only returns a type.</p>
+<h3 id="the-small-mathematical-core"><a class="header" href="#the-small-mathematical-core">The small mathematical core</a></h3>
+<p>The notation below is useful when reading an inferred type or a compiler
+diagnostic:</p>
+<pre><code class="language-text">τ ::= Int | Dec | Bool | Char | () | α
+    | [τ] | {τ τ} | τ -&gt; τ | EnumName
+
+σ ::= ∀α₁ … αₙ. τ
+Γ ⊢ e : τ
+</code></pre>
+<p><code>τ</code> is a monotype, <code>α</code> is an unknown type variable, <code>σ</code> is a polymorphic type
+scheme, and <code>Γ ⊢ e : τ</code> reads “under type environment <code>Γ</code>, expression <code>e</code> has
+type <code>τ</code>.” Calque source prints inferred unknowns as names such as <code>T0</code>; the
+Greek letters are only the conventional mathematical notation.</p>
+<p>For a lambda, the parameter starts with a fresh unknown type:</p>
+<pre><code class="language-text">Γ, x : α ⊢ body : β
+─────────────────────
+Γ ⊢ (lambda (x) body) : α -&gt; β
+</code></pre>
+<p>For an application <code>f x</code>, the compiler creates a fresh result type <code>β</code> and
+requires the type of <code>f</code> to unify with <code>type(x) -&gt; β</code>. Unification recursively
+matches the structure of functions, vectors, and tuples. It includes an
+<em>occurs check</em>, so it cannot invent an infinite type such as <code>α = [α]</code>.</p>
+<p>At a safe <code>let</code> binding, the compiler quantifies the variables that are free
+in the value but not free in the surrounding environment:</p>
+<pre><code class="language-text">generalize(Γ, τ) = ∀(ftv(τ) − ftv(Γ)). τ
+</code></pre>
+<p>For example, the identity function is inferred once as <code>∀α. α -&gt; α</code>; each use
+instantiates <code>α</code> with a fresh unknown, so one call may use <code>Int</code> and another
+may use <code>[Char]</code>.</p>
+<pre><code class="language-que">(let id (lambda (x) x))
+{(id 42) (id "Calque")}
+; {Int [Char]}
+</code></pre>
+<p>There is no implicit numeric subtyping or promotion in these rules. <code>Int</code> and
+<code>Dec</code> unify only with themselves; use an explicit conversion when crossing
+that boundary.</p>
+<h3 id="product-vector-and-enum-types"><a class="header" href="#product-vector-and-enum-types">Product, vector, and enum types</a></h3>
+<p>HM’s core is deliberately small. Calque extends its type grammar with the
+following structural and nominal types.</p>
+<p><strong>Vectors are homogeneous.</strong> <code>[T]</code> has exactly one element type. A vector
+literal adds a constraint that every element has that same type:</p>
+<pre><code class="language-que">(let scores [10 20 30]) ; [Int]
+; [10 true]             ; type error: Int and Bool do not unify
+</code></pre>
+<p>The same relationship is carried through vector operations:</p>
+<pre><code class="language-text">get    : [T] -&gt; Int -&gt; T
+set!   : [T] -&gt; Int -&gt; T -&gt; ()
+push!  : [T] -&gt; T -&gt; ()
+</code></pre>
+<p><strong>Tuples are ordered pairs and may be heterogeneous.</strong> <code>{A B}</code> means the
+first field has type <code>A</code> and the second has type <code>B</code>; unification checks both
+positions independently.</p>
+<pre><code class="language-que">(let entry {"Ada" 37}) ; {[Char] Int}
+</code></pre>
+<p><strong>Enums are nominal, closed types.</strong> An enum declaration makes every variant
+belong to that one named type. Its compact runtime <code>i32</code> tag does not make it
+an <code>Int</code> at the language level. <code>=~</code> requires both operands to have the same
+enum type, and <code>match</code> checks coverage of that closed variant set. See <a href="#enums-and-matching">Enums
+and matching</a>.</p>
+<h3 id="mutation-and-the-value-restriction"><a class="header" href="#mutation-and-the-value-restriction">Mutation and the value restriction</a></h3>
+<p>Plain HM generalizes every suitable <code>let</code>. That is unsound in the presence of
+mutable containers: if an empty vector were independently polymorphic at each
+use, one use could store an <code>Int</code> and another could read it as a <code>Bool</code>.</p>
+<p>Calque therefore uses a value restriction. It generalizes non-expansive
+bindings—such as literals, names, and lambdas—but an allocating expression
+such as a vector is kept monomorphic for its binding. Its element type is
+still inferred; it is simply shared by every later mutation.</p>
+<pre><code class="language-que">(let xs [])
+(push! xs 1)       ; fixes xs as [Int]
+; (push! xs true)  ; type error
+</code></pre>
+<p><code>mut</code> bindings are monomorphic by design and retain one type throughout their
+updates:</p>
+<pre><code class="language-que">(mut total 0)
+(alter! total (+ total 1))
+; (alter! total true) ; type error
+</code></pre>
+<p>The <code>&amp;mut</code>, <code>&amp;get</code>, and <code>&amp;alter!</code> forms are library macros over an ordinary
+one-element vector cell, so they inherit the same vector constraints rather
+than introducing a hidden second reference type.</p>
+<p>Effects are tracked alongside inferred expressions as compiler metadata:
+pure, mutation, host I/O, or an unknown call. They help diagnostics,
+permission checking, and optimization, but they are <strong>not</strong> currently an
+effect-row type system: an arrow such as <code>Int -&gt; Int</code> does not encode an
+effect. See <a href="#effects-and-permissions">Effects and permissions</a>.</p>
+<h3 id="recursion-macros-and-signatures"><a class="header" href="#recursion-macros-and-signatures">Recursion, macros, and signatures</a></h3>
+<p>For <code>letrec</code>, Calque first binds the recursive name to a fresh monomorphic
+placeholder, infers its value, and then unifies the placeholder with that
+value. This is why a recursive call must agree with the function being
+defined. <code>letrec</code> is intended for self-recursive functions; mutually recursive
+definitions do not have a separate forward-declaration form.</p>
+<p>Macros expand before inference. The expanded ordinary Calque expression is
+what receives these HM constraints, which keeps macros syntactic rather than
+an untyped escape hatch.</p>
+<p><code>sig</code> writes a contract in the same type language and verifies the inferred
+binding against it. It is useful for public APIs and for boundaries such as
+<code>deserialize</code>, where the desired result type cannot be recovered from the
+serialized text alone. See <a href="#inference-and-signatures">Inference and signatures</a> for
+the syntax and diagnostics.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="bindings-and-scope"><a class="header" href="#bindings-and-scope">Bindings and scope</a></h1>
 <h2 id="immutable-and-mutable-locals"><a class="header" href="#immutable-and-mutable-locals">Immutable and mutable locals</a></h2>
@@ -463,11 +571,20 @@ assignment after the new expression has been evaluated.</p>
 (let [first second] [10 20])
 </code></pre>
 <p>Vector destructuring has the usual shape constraint: a fixed pattern such as
-<code>[first second]</code> requires the vector to contain those elements. The analyser
-may warn when it cannot prove that fact. Rest patterns are available in lambda
-parameter patterns:</p>
-<pre><code class="language-que">(let head (lambda ([x . xs]) x))
+<code>[a b]</code> requires the vector to contain those elements. The analyser
+may warn when it cannot prove that fact. A final <code>. rest</code> binding works in
+both <code>let</code> and lambda vector patterns:</p>
+<pre><code class="language-que">(let [a b . rest] [10 20 30 40])
+a    ; 10
+b    ; 20
+rest ; [30 40]
+
+(let get-head (lambda ([x . xs]) x))
 </code></pre>
+<p>The names before <code>.</code> bind fixed positions. <code>rest</code> is the same tail window as
+<code>(cdr vector fixed-position-count)</code>: it begins after those positions without
+initially copying the remaining values. It materializes independently if you
+mutate it. The rest pattern must be final and can bind one name only.</p>
 <h2 id="scope"><a class="header" href="#scope">Scope</a></h2>
 <p>Names are lexical. A binding introduced by <code>block</code> is not visible after that
 block:</p>
@@ -565,16 +682,19 @@ and <code>when-not</code> are for effects: their implicit false branch is <code>
 introduces and updates its named counter for you:</p>
 <pre><code class="language-que">(mut i 0)
 (while (&lt; i 3)
-  (println! i)
+  (println! (Integer-&gt;String i))
   (++ i))
 
 (loop i (&lt; i 3)
-  (println! i))
+  (println! (Integer-&gt;String i)))
 </code></pre>
+<p><code>println!</code> has type <code>[Char] -&gt; ()</code>: convert an <code>Int</code> with
+<code>Integer-&gt;String</code>, or build text with functions such as <code>join</code>.</p>
 <p>There are library macros for common forms:</p>
-<pre><code class="language-que">(loop/for i 1 (&lt;= i 10) (++ i) (println! i))
-(loop/in value [10 20 30] (println! value))
-(loop/in/i (value index) [10 20] (println! {index value}))
+<pre><code class="language-que">(loop/for i 1 (&lt;= i 10) (++ i) (println! (Integer-&gt;String i)))
+(loop/in value [10 20 30] (println! (Integer-&gt;String value)))
+(loop/in/i index value [10 20]
+  (println! (join ":" [(Integer-&gt;String index) (Integer-&gt;String value)])))
 (times 3 (println! "tick"))
 </code></pre>
 <p>The correctness analyser recognizes many counter loops and can show the
@@ -608,7 +728,8 @@ when you need explicit sequencing without a new scope.</p>
 <tr><td><code>(pop! xs)</code></td><td>remove the final element</td></tr>
 <tr><td><code>(pop-val! xs)</code></td><td>remove and return the final element</td></tr>
 <tr><td><code>(empty! xs)</code></td><td>set length to zero while retaining allocated capacity</td></tr>
-<tr><td><code>(car xs)</code>, <code>(cdr xs)</code></td><td>first element and tail-style view/copy API</td></tr>
+<tr><td><code>(car xs)</code></td><td>first element; equivalent to <code>(get xs 0)</code></td></tr>
+<tr><td><code>(cdr xs)</code>, <code>(cdr xs n)</code></td><td>tail window from offset <code>1</code> or explicit offset <code>n</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -618,6 +739,11 @@ or structure the loop so that the proof is obvious:</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))
   (println! (get xs i)))
 </code></pre>
+<p><code>cdr</code> initially shares the source vector’s backing storage and shifts the
+logical start index; it does not copy every tail. Mutating that result
+materializes an independent vector, so it cannot change the original. See
+<a href="#car-cdr-and-tail-windows">Functions by example</a>
+for a complete example and the retention trade-off.</p>
 <h2 id="tuples"><a class="header" href="#tuples">Tuples</a></h2>
 <p>Tuples are fixed-size heterogeneous values:</p>
 <pre><code class="language-que">(let person {"Ada" 37 true})
@@ -743,6 +869,114 @@ For optimized builds, organize loops so <code>que explain</code> can see basic f
 as <code>0 &lt;= i &lt; length(xs)</code>. This lets the compiler remove checks where safe,
 while the source retains its clear invariant.</p>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="memory-management-and-ownership"><a class="header" href="#memory-management-and-ownership">Memory management and ownership</a></h1>
+<p>Calque has no tracing garbage collector. Managed values use runtime reference
+counting: the compiler inserts retains, releases, and ownership transfers for
+you. There is no <code>free</code>, borrow annotation, lifetime syntax, or manual retain
+operation in ordinary Calque source.</p>
+<p>This is designed to make memory behavior predictable: when the final live
+reference to a managed value is released, its storage can be reclaimed
+immediately by the runtime allocator. The optimizer can also transfer a fresh
+value directly to its final owner, or release a value after its last use, which
+avoids needless retain/release traffic.</p>
+<h2 id="what-is-managed"><a class="header" href="#what-is-managed">What is managed</a></h2>
+<p><code>Int</code>, <code>Dec</code>, <code>Bool</code>, <code>Char</code>, unit, and enum tags are immediate <code>i32</code> values.
+They do not allocate and do not participate in reference counting.</p>
+<p>Vectors, strings (<code>[Char]</code>), tuples containing managed values, and closures
+are managed heap values. The rule is implementation detail, not an operation
+you normally need to write around:</p>
+<pre><code class="language-que">(let title "Calque")             ; a managed character vector
+(let pair {title [1 2 3]})       ; managed tuple containing managed vectors
+(let prefix (lambda (x)          ; managed closure: it captures title
+  (cons title x)))
+
+(prefix " is typed")
+</code></pre>
+<p>Aliasing is safe. If two bindings refer to the same vector, it remains alive
+until neither binding (nor any live container or closure) owns it:</p>
+<pre><code class="language-que">(let xs [1 2 3])
+(let also-xs xs)
+(length also-xs)
+</code></pre>
+<p>You should write the direct program. Calque determines when a retain is
+needed, when a value can be moved instead, and when it can be released.</p>
+<h2 id="why-cycles-are-forbidden"><a class="header" href="#why-cycles-are-forbidden">Why cycles are forbidden</a></h2>
+<p>Reference counting alone cannot reclaim a cycle. If a vector owns a closure
+and that closure captures the same vector, both counts can remain nonzero even
+after the surrounding program has stopped referring to either one.</p>
+<p>Calque therefore rejects source-level operations that would form a managed
+reference cycle. This program is rejected at compile time:</p>
+<pre><code class="language-que">(let callbacks [])
+(let report-size
+  (lambda ()
+    (length callbacks)))
+
+; Error: report-size captures callbacks, then is stored in callbacks.
+(push! callbacks report-size)
+</code></pre>
+<img class="explanatory-diagram" src="images/ownership-cycles.svg" alt="Rejected managed ownership cycle beside a valid graph represented by IDs">
+<p>The same protection applies to direct <code>set!</code> and recognised container
+mutators—such as table, set, heap, and deque operations—and also follows a
+simple wrapper function that stores one of its arguments into another. The
+diagnostic identifies the storing operation and the captured managed root.</p>
+<p>Capturing a collection is fine by itself. It is the <em>back-edge</em>—putting that
+capturing closure into the collection it captures—that is not allowed:</p>
+<pre><code class="language-que">(let xs [1 2 3])
+(let size
+  (lambda ()
+    (length xs)))
+
+(size)
+; 3 — no cycle: xs does not own size.
+</code></pre>
+<p>This restriction is intentional. Calque does not promise a cycle collector as
+a fallback, because that would lose deterministic reclamation and introduce a
+second memory-management model.</p>
+<h2 id="model-graphs-with-ids-not-object-back-edges"><a class="header" href="#model-graphs-with-ids-not-object-back-edges">Model graphs with IDs, not object back-edges</a></h2>
+<p>Cycles in the <em>data you model</em> are perfectly valid. Represent graph edges with
+integers, strings, enum tags, or table keys rather than managed pointers or
+closures that refer back to their owner:</p>
+<pre><code class="language-que">; Node id -&gt; ids of outgoing neighbours.
+(let edges (Table/new))
+(Table/set! edges 0 [1 2])
+(Table/set! edges 1 [2])
+(Table/set! edges 2 [0])
+</code></pre>
+<p>That graph has a logical cycle (<code>0 → 1 → 2 → 0</code>), but its values do not own one
+another. It is ordinary acyclic runtime storage and works with the graph
+helpers in the standard library.</p>
+<p>For parent links, caches, registries, or callback dispatch, use an ID or a key
+into an owner table instead of storing a closure back into the structure that
+closure captures.</p>
+<h2 id="mutation-capacity-and-observable-memory"><a class="header" href="#mutation-capacity-and-observable-memory">Mutation, capacity, and observable memory</a></h2>
+<p><code>empty!</code> removes vector elements. If those elements are managed, their owned
+references are released; the vector’s backing allocation is retained for
+reuse. <code>capacity!</code> reserves backing storage and <code>compact!</code> rebuilds a vector
+with only the storage required by its current length:</p>
+<pre><code class="language-que">(let work [])
+(capacity! work 1000)
+; fill and process work
+(empty! work)       ; elements are released; reserved storage stays reusable
+(compact! work)     ; discard unused backing capacity
+</code></pre>
+<p>Releasing an object returns it to Calque’s allocator. It does <strong>not</strong> guarantee
+that a WebAssembly runtime immediately returns linear-memory pages to the
+operating system, so RSS may remain high after a temporary peak. The important
+semantic guarantee is that unreachable managed objects do not remain live;
+their storage is available for reuse without a tracing-GC pause.</p>
+<h2 id="performance-and-external-hosts"><a class="header" href="#performance-and-external-hosts">Performance and external hosts</a></h2>
+<p>Reference counting has a cost when a managed value is shared. Calque’s
+optimizer removes redundant retain/release pairs, transfers ownership of fresh
+values, and specializes known vector paths where it can. Use <code>que explain program.que --opt</code> when investigating retained/released work in a hot path.</p>
+<p><code>--debug</code> and <code>--opt</code> use the same ownership semantics. Debug mode adds safety
+guards; optimized mode may remove proven-safe checks and redundant ownership
+traffic, but it never makes cycles valid.</p>
+<p>The rule also matters at FFI boundaries. A custom Wasm host that constructs or
+retains Calque-managed values must obey the runtime ownership convention. Do
+not use a host import to manufacture a cyclic Calque object; it bypasses the
+source-level proof that keeps ordinary programs cycle-free. See <a href="#ffi-and-host-imports">FFI and host
+imports</a> for the ABI boundary.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="pipelines-and-composition"><a class="header" href="#pipelines-and-composition">Pipelines and composition</a></h1>
 <p>Most functional library APIs take their data argument last. That makes a
 pipeline read from input to result:</p>
@@ -809,6 +1043,75 @@ error easier to understand after looking at that expansion.</p>
 new binding structure, control flow, or syntactic rearrangement. Keep macro
 expansions small, hygienic in spirit, and transparent enough that the expanded
 form remains ordinary, type-checkable Calque.</p>
+<h2 id="writing-a-macro"><a class="header" href="#writing-a-macro">Writing a macro</a></h2>
+<p>A macro transformer receives the <strong>written syntax</strong> at its call site and must
+return replacement syntax. The smallest form uses a lambda transformer and
+quasiquote:</p>
+<pre><code class="language-que">(letmacro add1
+  (lambda (x)
+    (qq (+ (uq x) 1))))
+
+(add1 41)
+; expands to: (+ 41 1)
+; 42
+</code></pre>
+<p><code>qq</code> constructs the output program. Inside it, ordinary words and lists are
+literal output syntax. <code>(uq x)</code> inserts the single syntax form supplied as
+<code>x</code>; it does <strong>not</strong> evaluate that form. In the example, <code>(add1 (+ 20 21))</code>
+becomes <code>(+ (+ 20 21) 1)</code>, then normal type checking and evaluation happen.</p>
+<p>Macros can also use pattern clauses. This version of <code>unless</code> accepts zero or
+more body forms, and uses <code>uqs</code> to splice all of them into the generated
+<code>do</code>:</p>
+<pre><code class="language-que">(letmacro unless*
+  (()
+    (qq nil))
+  ((test . body)
+    (qq (if (uq test) nil (do (uqs body))))))
+
+(mut total 0)
+(unless* false
+  (++ total)
+  (++ total))
+total
+; 2
+</code></pre>
+<p>Use <code>uq</code> for one expression and <code>uqs</code> only where a surrounding list or body
+accepts several forms. The rest pattern <code>. body</code> is syntax-list rest capture;
+it is not a runtime vector value.</p>
+<h3 id="generated-bindings-and-gensym"><a class="header" href="#generated-bindings-and-gensym">Generated bindings and <code>gensym</code></a></h3>
+<p>If a macro introduces a local name, create it with <code>gensym</code>. It produces a
+fresh identifier, avoiding accidental capture of a caller’s name. This macro
+evaluates its input once, then reads its final element:</p>
+<pre><code class="language-que">(letmacro last-item
+  (lambda (xs)
+    (do
+      (let values (gensym))
+      (qq
+        (block
+          (let (uq values) (uq xs))
+          (get (uq values) (- (length (uq values)) 1)))))))
+
+(last-item [10 20 30])
+; 30
+</code></pre>
+<p>The generated <code>values</code> cannot collide with a caller’s <code>values</code> binding. Like
+<code>car</code>, this macro requires a non-empty vector; macros preserve the ordinary
+runtime and static-safety rules of the forms they expand to.</p>
+<h3 id="syntax-time-helpers"><a class="header" href="#syntax-time-helpers">Syntax-time helpers</a></h3>
+<p>For macros that inspect or rebuild an arbitrary syntax list, use the
+syntax-only helpers <code>syntax/list?</code>, <code>syntax/empty?</code>, <code>syntax/head</code>,
+<code>syntax/tail</code>, <code>syntax/prepend</code>, <code>syntax/append</code>, <code>syntax/word?</code>, and
+<code>syntax/word=?</code>. They are available only while a <code>letmacro</code> expands; they are
+not runtime data-structure functions. The implementation of <code>|&gt;</code> in the
+bundled library is the reference example of this more advanced style.</p>
+<h2 id="debugging-an-expansion"><a class="header" href="#debugging-an-expansion">Debugging an expansion</a></h2>
+<p>Define a macro before its use, keep its expansion small, and inspect what the
+compiler will receive when a type error is unclear:</p>
+<pre><code class="language-sh">que program.que --emit source
+</code></pre>
+<p>The result is expanded Calque source. It is particularly useful for checking
+<code>uq</code> versus <code>uqs</code>, generated bindings, and a macro that introduces control
+flow. The expanded result must still type-check like handwritten Calque.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="inference-and-signatures"><a class="header" href="#inference-and-signatures">Inference and signatures</a></h1>
 <p>Calque infers types for ordinary bindings and generalizes them where valid. Start
@@ -862,6 +1165,125 @@ que explain program.que --opt --json
 </code></pre>
 <p>The report groups warnings before termination, effects and permissions,
 performance observations, and generated-code details.</p>
+<h2 id="reading-que-explain"><a class="header" href="#reading-que-explain">Reading <code>que explain</code></a></h2>
+<p><code>que explain</code> is the programmer-facing view of the typed program, static
+proofs, and generated WAT shape. It does not run the program or benchmark it.
+Use <code>--opt</code> when you want its generated-code and performance observations to
+describe the optimized build you intend to run:</p>
+<pre><code class="language-sh">que explain program.que --opt
+que explain program.que --opt --json --out explain.json
+</code></pre>
+<p>The text report has these sections:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Section</th><th>What it tells you</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>Result type</strong></td><td>The inferred type of the final user expression.</td></tr>
+<tr><td><strong>Correctness</strong></td><td>Static arithmetic/bounds warnings, source locations, suggestions, and successful bounds proofs.</td></tr>
+<tr><td><strong>Termination</strong></td><td>A proven or unknown result for analysed loops and recursive functions, including the inferred measure when available.</td></tr>
+<tr><td><strong>Effects and permissions</strong></td><td>The combined effect (<code>pure</code>, mutation, host I/O, or unknown call) and required host imports.</td></tr>
+<tr><td><strong>Performance</strong></td><td>A static count of allocations, dynamic applies, checked/unchecked reads, direct calls, and WAT bytes.</td></tr>
+<tr><td><strong>Generated code</strong></td><td>Per-function allocation and call details, plus inferred source-form types and effects.</td></tr>
+</tbody>
+</table>
+</div>
+<p>For a safe counted access, the useful part looks conceptually like this:</p>
+<pre><code class="language-text">Correctness:
+  Proven bounds:
+    (get xs i) proven safe
+      0 &lt;= i &lt;= 9
+
+Termination:
+  proven terminating: while (&lt; i (length xs))
+    i increases toward the exit bound
+</code></pre>
+<p>The report’s performance section is deliberately <strong>static WAT shape, not a
+runtime profile</strong>. It can identify a remaining allocation or bounds check and
+point toward a useful rewrite, but timing, CPU effects, and allocator behavior
+still require a real benchmark.</p>
+<p><code>--json</code> contains the same information in stable fields such as
+<code>result_type</code>, <code>warnings</code>, <code>bounds_proofs</code>, <code>termination</code>, <code>effect</code>,
+<code>host_imports</code>, <code>metrics</code>, <code>compiled_functions</code>, and <code>optimization_targets</code>.
+That form is intended for editor integrations, CI, and custom reporting.</p>
+<h2 id="the-analysis-model"><a class="header" href="#the-analysis-model">The analysis model</a></h2>
+<p>Type inference answers questions such as “is this value an <code>Int</code> or a
+<code>[Char]</code>?” It cannot answer “can this <code>Int</code> overflow?” or “is this index below
+this particular vector’s length?” Calque runs a second, flow-sensitive static
+analysis after type inference for those questions.</p>
+<p>It is an <strong>abstract interpreter</strong>: it executes a finite mathematical summary
+of the program rather than executing its concrete values. A useful simplified
+view of the state at a program point is:</p>
+<pre><code class="language-text">S = (R, L, A, P)
+
+R(x) = [lower, upper]       possible Int range for x
+L(xs) = n or &gt;= n           known exact or minimum vector length
+A                         symbolic affine relations, such as i &lt; length(xs)
+P                         path facts, aliases, and recognised guard summaries
+</code></pre>
+<p>For example, on the true path of this condition the analyser refines the
+abstract state to include both facts needed by <code>get</code>:</p>
+<pre><code class="language-que">(if (and (&gt;= i 0) (&lt; i (length xs)))
+    (get xs i)
+    fallback)
+</code></pre>
+<pre><code class="language-text">true path:  0 &lt;= i &lt; length(xs)
+therefore:  (get xs i) is proven safe
+</code></pre>
+<p>It keeps bounded alternatives when useful—for example, a value known to be
+negative <em>or</em> positive rather than merely “some <code>Int</code>”—and tracks simple
+affine relations such as <code>a + b &lt;= 2147483647</code>. Arithmetic ranges are
+calculated in a wider analysis domain, then checked against the signed <code>i32</code>
+range used by <code>Int</code>.</p>
+<h3 id="control-flow-and-loops"><a class="header" href="#control-flow-and-loops">Control flow and loops</a></h3>
+<p>The analyser refines facts independently along each branch. Where paths meet,
+it retains only facts that remain valid on every incoming path. Informally:</p>
+<pre><code class="language-text">after (if condition left right) = join(state(left), state(right))
+</code></pre>
+<p>Loops require a fixed point: the body is analysed repeatedly until its summary
+stops gaining useful facts. Widening deliberately broadens a changing range
+when necessary so this process always finishes. That is why Calque can prove
+common counted loops without attempting to solve the halting problem.</p>
+<pre><code class="language-que">(loop i (&lt; i (length xs))
+  (get xs i))
+</code></pre>
+<p>The loop supplies an initial value, condition, and update. The analysis derives
+<code>0 &lt;= i &lt; length(xs)</code> for the body, proves the read safe, and can record the
+counter as moving toward its exit bound.</p>
+<h3 id="proof-outcomes"><a class="header" href="#proof-outcomes">Proof outcomes</a></h3>
+<p>Each checked operation has one of three outcomes:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Result</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><strong>proven safe</strong></td><td>Every abstract execution reaching the operation satisfies the required fact.</td></tr>
+<tr><td><strong>definitely invalid</strong></td><td>Every possible execution violates it, such as a known negative index.</td></tr>
+<tr><td><strong>unknown</strong></td><td>The analysis cannot establish either conclusion with its conservative model.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Only a proven-safe fact is eligible for an optimization such as omitting a
+runtime bounds check. <code>unknown</code> is intentionally not a claim that the program
+fails; write a guard, simplify the shape, or keep the check if the invariant
+lives outside the visible source.</p>
+<p>The same model supports several analyses:</p>
+<ul>
+<li><strong>bounds and non-empty vectors</strong> — <code>get</code>, <code>set!</code>, <code>car</code>, and <code>pop-val!</code>;</li>
+<li><strong>arithmetic</strong> — <code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, and <code>%</code>, including a non-zero divisor
+and the special <code>minimum Int / -1</code> overflow case;</li>
+<li><strong>termination evidence</strong> — counted loops and recursive calls whose argument
+is shown to move toward a base-case guard;</li>
+<li><strong>effects</strong> — mutation, host I/O, and calls whose effect cannot yet be
+resolved.</li>
+</ul>
+<p>Recognised helper predicates can carry proof information too. A conventional
+definition such as <code>in-bounds?</code> can establish a later <code>get</code> when its true
+branch is taken, and <code>+/safe?</code> can establish the corresponding guarded
+addition. The analyser is conservative about aliases and mutation: once a
+fact may have been invalidated, it stops relying on it.</p>
 <h2 id="bounds-and-empty-vectors"><a class="header" href="#bounds-and-empty-vectors">Bounds and empty vectors</a></h2>
 <p>The analyser recognizes common loop shapes:</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))
@@ -927,17 +1349,21 @@ external WASI host.</p>
 <p><code>--allow</code> accepts the groups separated by spaces on the command line. The
 runtime exposes the current working directory to the Wasm program when a file
 permission is granted.</p>
-<h2 id="streaming-input"><a class="header" href="#streaming-input">Streaming input</a></h2>
-<p>For large input, avoid allocating the full file when a callback can process it
-incrementally:</p>
+<h2 id="callback-input"><a class="header" href="#callback-input">Callback input</a></h2>
+<p>The callback forms process chunks or lines without building an output vector:</p>
 <pre><code class="language-que">(read/lines! "input.txt"
   (lambda (line)
     (println! line)
     false))
 </code></pre>
-<p>The callback returns a <code>Bool</code>; use it to control the streaming operation as
-documented by the function’s live signature. Query the installed library when
-using chunked or line APIs:</p>
+<p>The callback returns a <code>Bool</code>: <code>false</code> continues and <code>true</code> stops early. The
+operation returns whether it stopped early. <code>read/chunks!</code> and
+<code>stdin/chunks!</code> require a positive chunk size.</p>
+<p>The current external WASI adapter reads the source input before splitting it
+for these callbacks, while a native-C or embedding host can stream directly.
+The callback API is still useful for early exit and for avoiding a separate
+vector of every line or chunk. Query the installed library when using these
+APIs:</p>
 <pre><code class="language-sh">que --lib types 'read/*'
 que --lib types 'stdin/*'
 </code></pre>
@@ -954,6 +1380,7 @@ they are not dynamically typed escape hatches.</p>
 <code>i32</code> model: <code>Int</code>, <code>Bool</code>, <code>Char</code>, enum tags, <code>Dec</code>, and unit all have compact
 scalar lowering. Managed collections and closures use the runtime’s reference
 counted representation.</p>
+<img class="explanatory-diagram" src="images/compiler-pipeline.svg" alt="Calque source through parsing, macros, inference, analysis, optimization, WAT, Wasm, and two execution paths">
 <h2 id="wasm32-today"><a class="header" href="#wasm32-today">Wasm32 today</a></h2>
 <p>The default target is Wasm32: linear-memory addresses and array indexes in the
 runtime are <code>i32</code>. An <code>Int</code> index is signed at the language level, while Wasm
@@ -1123,17 +1550,120 @@ fixed-point <code>i32</code>, not an <code>f64</code>. Calque’s managed repres
 the runtime: a host returning a managed value must construct a valid Calque heap
 object, while managed values received from Calque are borrowed unless the host
 explicitly retains them using the runtime convention.</p>
-<h2 id="built-in-host-operations"><a class="header" href="#built-in-host-operations">Built-in host operations</a></h2>
-<p>The standard runtime integration supplies typed host imports for file, stdin,
-terminal, clock, serialization, and randomness operations, including:</p>
-<pre><code class="language-text">read!             read/chunks!       read/lines!        list-dir!
-stdin!            stdin/chunks!      write!             mkdir!
-move!             delete!            print!             println!
-clear!            sleep!             time!              random!
-serialize         deserialize
+<h2 id="built-in-effect-operations"><a class="header" href="#built-in-effect-operations">Built-in effect operations</a></h2>
+<p>The normal <code>que</code> runner supplies these operations through its WASI adapter.
+They have ordinary, statically checked Calque types; <code>!</code> marks the operations
+that perform an external effect. <code>println!</code> is the standard-library convenience
+form of <code>print!</code> plus a newline, but has the same source-level type.</p>
+<h3 id="files-and-directories"><a class="header" href="#files-and-directories">Files and directories</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>read!</code></td><td><code>[Char] -&gt; [Char]</code></td><td><code>read</code></td><td>Read a complete text file.</td></tr>
+<tr><td><code>list-dir!</code></td><td><code>[Char] -&gt; [[Char]]</code></td><td><code>read</code></td><td>List directory-entry names.</td></tr>
+<tr><td><code>read/chunks!</code></td><td><code>[Char] -&gt; Int -&gt; ([Char] -&gt; Bool) -&gt; Bool</code></td><td><code>read</code></td><td>Visit successive text chunks.</td></tr>
+<tr><td><code>read/lines!</code></td><td><code>[Char] -&gt; ([Char] -&gt; Bool) -&gt; Bool</code></td><td><code>read</code></td><td>Visit successive lines, without newline terminators.</td></tr>
+<tr><td><code>write!</code></td><td><code>[Char] -&gt; [Char] -&gt; ()</code></td><td><code>write</code></td><td>Write text to a path.</td></tr>
+<tr><td><code>mkdir!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>write</code></td><td>Create a directory path.</td></tr>
+<tr><td><code>move!</code></td><td><code>[Char] -&gt; [Char] -&gt; ()</code></td><td><code>write</code></td><td>Rename or move a path.</td></tr>
+<tr><td><code>delete!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>delete</code></td><td>Delete a file or directory path.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Paths and text are both <code>[Char]</code>, normally written as string literals:</p>
+<pre><code class="language-que">(let config (read! "config.txt"))
+(write! "copy.txt" config)
+(let names (list-dir! "."))
 </code></pre>
-<p>They are capability-gated under the external WASI runner; see <a href="#effects-and-permissions">Effects and
-permissions</a>.</p>
+<h3 id="standard-input-and-callbacks"><a class="header" href="#standard-input-and-callbacks">Standard input and callbacks</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>stdin!</code></td><td><code>() -&gt; [Char]</code></td><td><code>stdin</code></td><td>Read all standard input as text.</td></tr>
+<tr><td><code>stdin/chunks!</code></td><td><code>Int -&gt; ([Char] -&gt; Bool) -&gt; Bool</code></td><td><code>stdin</code></td><td>Visit standard input in chunks.</td></tr>
+</tbody>
+</table>
+</div>
+<p>All three callback operations—<code>read/chunks!</code>, <code>read/lines!</code>, and
+<code>stdin/chunks!</code>—share one control convention:</p>
+<ul>
+<li>The callback receives a <code>[Char]</code> chunk or line.</li>
+<li>Return <code>false</code> to continue.</li>
+<li>Return <code>true</code> to stop early.</li>
+<li>The operation itself returns <code>true</code> when it stopped early and <code>false</code> when it
+reached end of input.</li>
+</ul>
+<p>Chunk size must be positive. For example, print at most ten lines:</p>
+<pre><code class="language-que">(&amp;mut seen 0)
+(let stopped?
+  (read/lines! "input.txt"
+    (lambda (line)
+      (&amp;alter! seen (+ (&amp;get seen) 1))
+      (println! line)
+      (&gt;= (&amp;get seen) 10))))
+</code></pre>
+<p>The callback API avoids constructing a vector of all lines or chunks. The
+current external WASI adapter reads its input text before it partitions it for
+callbacks; an embedding or native-C host may stream at the host level. Do not
+assume the callback spelling alone guarantees bounded host-side input memory on
+every target.</p>
+<h3 id="terminal-and-clock"><a class="header" href="#terminal-and-clock">Terminal and clock</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>print!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>print</code></td><td>Print text without adding a newline.</td></tr>
+<tr><td><code>println!</code></td><td><code>[Char] -&gt; ()</code></td><td><code>print</code></td><td>Print text followed by a newline.</td></tr>
+<tr><td><code>clear!</code></td><td><code>() -&gt; ()</code></td><td><code>print</code></td><td>Request a terminal clear.</td></tr>
+<tr><td><code>sleep!</code></td><td><code>Int -&gt; ()</code></td><td><code>clock</code></td><td>Sleep for a non-negative number of milliseconds.</td></tr>
+<tr><td><code>time!</code></td><td><code>() -&gt; Int</code></td><td><code>clock</code></td><td>Current wall-clock time in whole Unix seconds.</td></tr>
+<tr><td><code>random!</code></td><td><code>() -&gt; Int</code></td><td><code>clock</code></td><td>Get one host-provided random <code>Int</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>println!</code> accepts text, not an arbitrary value. Convert an integer explicitly:</p>
+<pre><code class="language-que">(println! (Integer-&gt;String (time!)))
+(sleep! 250)
+</code></pre>
+<p><code>random!</code> is effectful host randomness. The library’s <code>random</code>, <code>random/int</code>,
+<code>random.</code>, and <code>random/dec</code> are separate deterministic seed-to-next-state
+functions for reproducible computations.</p>
+<h3 id="serialization"><a class="header" href="#serialization">Serialization</a></h3>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Type</th><th>Permission</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>serialize</code></td><td><code>T -&gt; [Char]</code></td><td>none</td><td>Convert a statically known supported Calque value to text.</td></tr>
+<tr><td><code>deserialize</code></td><td><code>[Char] -&gt; T</code></td><td>none</td><td>Decode text as the statically expected type.</td></tr>
+</tbody>
+</table>
+</div>
+<p><code>deserialize</code> cannot infer a target type from characters alone. State the
+expected result with <code>sig</code> before the binding:</p>
+<pre><code class="language-que">(let saved (serialize {42 "Ada"}))
+
+(sig restored {Int [Char]})
+(let restored (deserialize saved))
+; {42 "Ada"}
+</code></pre>
+<p>Enums serialize by their declared variant name and are checked against the
+expected enum on decode. See <a href="#enum-keyed-table-round-trip">Enum-keyed table round trip</a>
+for a table example.</p>
+<p>Run a program using an operation only after granting the matching capability:</p>
+<pre><code class="language-sh">que program.que --allow read write print
+</code></pre>
+<p><code>--allow all</code> grants every group. See <a href="#effects-and-permissions">Effects and permissions</a>
+for the short permission overview.</p>
 <h2 id="custom-hosts"><a class="header" href="#custom-hosts">Custom hosts</a></h2>
 <p>The normal <code>que</code> runner delegates to an external WASI runtime. It can run the
 built-in operations through Calque’s WASI adapter, but it does not load arbitrary
@@ -1241,6 +1771,27 @@ same basic read operations work on both.</p>
 (at xs -1)              ; 30 — negative indexing helper
 (cons [0] xs)           ; [0 10 20 30] — concatenate two vectors
 </code></pre>
+<h3 id="car-cdr-and-tail-windows"><a class="header" href="#car-cdr-and-tail-windows"><code>car</code>, <code>cdr</code>, and tail windows</a></h3>
+<p><code>car</code> reads the first element: it is the head-oriented spelling of
+<code>(get xs 0)</code>. <code>cdr</code> creates a <strong>tail window</strong>. <code>(cdr xs)</code> starts at offset
+<code>1</code>; <code>(cdr xs n)</code> starts at offset <code>n</code>. The window has its own logical index
+zero, so it is useful for head-and-tail recursion without copying every tail.</p>
+<pre><code class="language-que">(let xs [10 20 30 40])
+(let tail (cdr xs 2))
+
+(get tail 0)            ; 30
+(length tail)           ; 2
+
+(set! tail 0 99)
+{xs tail}
+; { [10 20 30 40] [99 40] }
+</code></pre>
+<p>Initially, a <code>cdr</code> result shares the source vector’s backing storage. The
+first mutation of the tail materializes an independent vector, so changing
+<code>tail</code> does not change <code>xs</code>. Conversely, retaining a small tail also retains
+the original allocation until the tail is released or materialized. Use
+<code>slice</code> when a fresh copied subvector is the clearer or more appropriate
+representation.</p>
 <p><code>get</code>, <code>car</code>, <code>first</code>, <code>last</code>, and <code>pop-val!</code> require a valid, non-empty
 input. For a dynamic index, use <code>in-bounds?</code>, <code>Vector/get*</code>, or structure the
 loop so the analyser can prove the access.</p>
@@ -1519,6 +2070,38 @@ on your machine is the authoritative source for exact signatures and source:</p>
 que --lib types 'Table/*'
 que --lib source Table/update-or!
 </code></pre>
+<h2 id="common-functions"><a class="header" href="#common-functions">Common functions</a></h2>
+<p>Most Calque programs use a fairly small part of the library. Start with these
+names; the sections below remain the complete family index, and <a href="#functions-by-example">Functions by
+example</a> shows each of these patterns in runnable code.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Need</th><th>Start with</th></tr>
+</thead>
+<tbody>
+<tr><td>Build integer data</td><td><code>range</code>, <code>range/exclusive</code>, <code>fill</code>, <code>replicate</code></td></tr>
+<tr><td>Transform or retain vector values</td><td><code>map</code>, <code>map/i</code>, <code>filter</code> (or <code>select</code>), <code>exclude</code>, <code>flat-map</code></td></tr>
+<tr><td>Visit for effects</td><td><code>for</code>, <code>each</code>, <code>for/i</code>, <code>each/i</code></td></tr>
+<tr><td>Combine or inspect values</td><td><code>reduce</code>, <code>sum</code>, <code>product</code>, <code>count</code>, <code>find</code>, <code>some?</code>, <code>every?</code>, <code>minimum</code>, <code>maximum</code></td></tr>
+<tr><td>Reshape a vector</td><td><code>reverse</code>, <code>flat</code>, <code>zip</code>, <code>unzip</code>, <code>slice</code>, <code>take/first</code>, <code>drop/first</code>, <code>partition</code></td></tr>
+<tr><td>Order or classify values</td><td><code>sort</code>, <code>group</code>, <code>unique/int</code>, <code>unique/char</code></td></tr>
+<tr><td>Parse or assemble text</td><td><code>split</code>, <code>split/lines</code>, <code>split/words</code>, <code>trim</code>, <code>join</code>, <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code></td></tr>
+<tr><td>Use key-value data</td><td><code>Table/new</code>, <code>Table/set!</code>, <code>Table/get</code>, <code>Table/has?</code>, <code>Table/entries</code>, <code>Table/update-or!</code>, <code>Table/count</code></td></tr>
+<tr><td>Work directly with a vector</td><td><code>length</code>, <code>get</code>, <code>set!</code>, <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>in-bounds?</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>The usual collection convention is <strong>data last</strong>, so calls compose through
+<code>|&gt;</code>:</p>
+<pre><code class="language-que">(|&gt; [1 2 3 4]
+    (map (lambda (x) (* x x)))
+    (filter (lambda (x) (&gt; x 4)))
+    sum)
+; 25
+</code></pre>
+<p><code>get</code>, <code>pop-val!</code>, <code>first</code>, and <code>last</code> require a valid value. When an index or
+input length is dynamic, check it with <code>in-bounds?</code> or use <code>Vector/get*</code>.</p>
 <h2 id="core-language-operations"><a class="header" href="#core-language-operations">Core language operations</a></h2>
 <p>The compiler provides vector and tuple primitives: <code>length</code>, <code>get</code>, <code>set!</code>,
 <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>car</code>, <code>cdr</code>, <code>cons</code>,
@@ -1696,6 +2279,43 @@ are provided for the library’s set representation. As with tables, query the
 specific function type for the accepted key kind:</p>
 <pre><code class="language-sh">que --lib types 'Set/*'
 </code></pre>
+<h3 id="set-algebra"><a class="header" href="#set-algebra">Set algebra</a></h3>
+<p><code>Set/intersection</code>, <code>Set/union</code>, <code>Set/difference</code>, and <code>Set/xor</code> each create a
+new set; neither input set is changed. Let <code>A = {"red", "blue", "green"}</code>
+and <code>B = {"green", "gold"}</code>:</p>
+<img class="set-algebra-diagram" src="images/set-algebra.svg" alt="Venn diagrams for intersection, union, difference, and xor">
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Operation</th><th>Mathematical meaning</th><th>With <code>A</code> and <code>B</code></th></tr>
+</thead>
+<tbody>
+<tr><td><code>(Set/intersection A B)</code></td><td>values in both sets, <code>A ∩ B</code></td><td><code>{"green"}</code></td></tr>
+<tr><td><code>(Set/union A B)</code></td><td>values in either set, <code>A ∪ B</code></td><td><code>{"red", "blue", "green", "gold"}</code></td></tr>
+<tr><td><code>(Set/difference A B)</code></td><td>values in the first but not the second, <code>A \ B</code></td><td><code>{"red", "blue"}</code></td></tr>
+<tr><td><code>(Set/xor A B)</code></td><td>values in exactly one input, <code>(A \ B) ∪ (B \ A)</code></td><td><code>{"red", "blue", "gold"}</code></td></tr>
+</tbody>
+</table>
+</div>
+<pre><code class="language-que">(let A (Vector-&gt;Set ["red" "blue" "green"]))
+(let B (Vector-&gt;Set ["green" "gold"]))
+
+(let common (Set/intersection A B))
+(let all (Set/union A B))
+(let only-A (Set/difference A B))
+(let exclusive (Set/xor A B))
+
+{ (Set/has? "green" common)    ; true
+  (Set/has? "red" common)      ; false
+  (Set/has? "gold" all)        ; true
+  (Set/has? "blue" only-A)     ; true
+  (Set/has? "green" exclusive)} ; false
+</code></pre>
+<p><code>Set/difference</code> is directional: swapping its arguments changes the result.
+<code>Set/xor</code> is symmetric, so <code>(Set/xor A B)</code> and <code>(Set/xor B A)</code> contain the
+same members. A set’s bucket layout does not promise a presentation order; if
+you need a deterministic displayed vector, convert with <code>Set-&gt;Vector</code> and sort
+the result.</p>
 <h2 id="heap-and-deque"><a class="header" href="#heap-and-deque">Heap and deque</a></h2>
 <p><code>Heap/*</code> implements a mutable binary heap using a caller-supplied comparison
 predicate. <code>Que/*</code> provides a deque-like structure backed by vectors, with
@@ -1850,12 +2470,13 @@ nil            ; unit, type ()
 <h2 id="forms-and-patterns"><a class="header" href="#forms-and-patterns">Forms and patterns</a></h2>
 <pre><code class="language-que">(lambda (left right) (+ left right))
 (let {x y} {10 20})
-(let [first second] [10 20])
-(let [head . tail] [1 2 3])
+(let [a b] [10 20])
+(let [a . tail] [1 2 3])
 </code></pre>
-<p>The final rest pattern is primarily useful in parameter/vector destructuring.
-When destructuring requires elements, static analysis may warn unless it can
-prove the source vector has sufficient length.</p>
+<p>The final rest pattern works in <code>let</code> and lambda vector destructuring. It
+binds the remaining tail after the fixed positions. When destructuring requires
+elements, static analysis may warn unless it can prove the source vector has
+sufficient length.</p>
 <h2 id="operators-are-names"><a class="header" href="#operators-are-names">Operators are names</a></h2>
 <p>Operators are ordinary callable names in prefix position. Their suffix
 communicates their type family:</p>
@@ -1868,6 +2489,52 @@ communicates their type family:</p>
 (=? true true) ; Bool equality
 </code></pre>
 <p>Enum equality is intentionally separate: <code>(=~ A B)</code>.</p>
+<h2 id="naming-conventions"><a class="header" href="#naming-conventions">Naming conventions</a></h2>
+<p>Names are ordinary identifiers, so these spellings are conventions with useful
+semantic meaning—not a separate method syntax. Follow them for library and
+application APIs so callers can understand an operation before opening its
+implementation.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Form</th><th>Convention</th><th>Examples</th></tr>
+</thead>
+<tbody>
+<tr><td><code>name?</code></td><td>Returns a <code>Bool</code>; asks a question or establishes a condition.</td><td><code>empty?</code>, <code>Table/has?</code>, <code>+/safe?</code>, <code>in-bounds?</code></td></tr>
+<tr><td><code>name!</code></td><td>Performs an observable effect: usually mutation, sometimes host I/O.</td><td><code>push!</code>, <code>set!</code>, <code>capacity!</code>, <code>read!</code>, <code>println!</code></td></tr>
+<tr><td><code>name/i</code></td><td>An index-aware collection variant; it receives the element and its index.</td><td><code>map/i</code>, <code>select/i</code>, <code>every/i?</code></td></tr>
+<tr><td><code>Namespace/name</code></td><td>A namespace-like library family; it is still one ordinary identifier.</td><td><code>Table/get</code>, <code>String/contains?</code>, <code>Vector/sort!</code></td></tr>
+<tr><td><code>From-&gt;To</code></td><td>Explicit conversion between representations or numeric families.</td><td><code>String-&gt;Integer</code>, <code>Int-&gt;Dec</code>, <code>Char-&gt;Int</code></td></tr>
+<tr><td><code>name/raw</code></td><td>Internal or lower-level helper. Prefer the corresponding public API unless you need its precise representation contract.</td><td><code>Vector/append/raw!</code></td></tr>
+</tbody>
+</table>
+</div>
+<p><code>!</code> does <strong>not</strong> mean only “changes its first argument.” <code>push!</code> and <code>set!</code>
+mutate a collection, while <code>read!</code>, <code>println!</code>, <code>sleep!</code>, and <code>random!</code> are
+also bang-named because they interact with the host. The type/effect analysis
+tracks the actual mutation and I/O behavior; the suffix makes that behavior
+visible at the call site.</p>
+<p>Likewise, <code>?</code> says a function’s result is a boolean predicate, not that it is
+necessarily pure. A predicate can be used directly in a condition and some
+recognised guards, such as <code>+/safe?</code> or a conventional <code>in-bounds?</code> helper,
+can refine facts for the static analyser.</p>
+<p>The punctuation suffixes on primitive operators select a value family:</p>
+<pre><code class="language-que">(+ 1 2)        ; Int arithmetic
+(+. 1.5 2.0)   ; Dec arithmetic
+(+# 'A' 1)     ; Char arithmetic
+
+(= 2 2)        ; Int equality
+(=. 2.0 2.0)   ; Dec equality
+(=# 'x' 'x')   ; Char equality
+(=? true true) ; Bool equality
+(=~ Rock Rock) ; enum equality
+</code></pre>
+<p>For the live library surface and exact inferred signatures, query the
+installed compiler rather than guessing from a name:</p>
+<pre><code class="language-sh">que --lib types 'Table/*'
+que --lib types '*safe?'
+que --lib source Vector/sort!
+</code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="quick-reference"><a class="header" href="#quick-reference">Quick reference</a></h1>
 <h2 id="bind-and-define"><a class="header" href="#bind-and-define">Bind and define</a></h2>

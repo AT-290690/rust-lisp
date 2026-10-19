@@ -28,7 +28,7 @@
         <link rel="stylesheet" id="mdbook-ayu-highlight-css" href="../ayu-highlight-3fdfc3ac.css">
 
         <!-- Custom theme stylesheets -->
-        <link rel="stylesheet" href="../theme/custom-bdb5754c.css">
+        <link rel="stylesheet" href="../theme/custom-59403e9a.css">
 
 
         <!-- Provide site root and default themes to javascript -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
+            window.path_to_searchindex_js = "../searchindex-f424c988.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-b7e24d2d.js"></script>
+        <script src="../toc-61b5ba55.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -186,6 +186,7 @@
 <code>i32</code> model: <code>Int</code>, <code>Bool</code>, <code>Char</code>, enum tags, <code>Dec</code>, and unit all have compact
 scalar lowering. Managed collections and closures use the runtime’s reference
 counted representation.</p>
+<img class="explanatory-diagram" src="../images/compiler-pipeline.svg" alt="Calque source through parsing, macros, inference, analysis, optimization, WAT, Wasm, and two execution paths">
 <h2 id="wasm32-today"><a class="header" href="#wasm32-today">Wasm32 today</a></h2>
 <p>The default target is Wasm32: linear-memory addresses and array indexes in the
 runtime are <code>i32</code>. An <code>Int</code> index is signed at the language level, while Wasm
