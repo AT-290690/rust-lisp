@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Correctness analysis - Calque — a typed Lisp for WebAssembly</title>
+        <title>Correctness analysis - The Calque Scripting Language</title>
 
 
         <!-- Custom HTML head -->
@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-56af7dc9.js";
+            window.path_to_searchindex_js = "../searchindex-d89d88fa.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-de53471e.js"></script>
+        <script src="../toc-b7e24d2d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -138,7 +138,7 @@
                         </button>
                     </div>
 
-                    <h1 class="menu-title">Calque — a typed Lisp for WebAssembly</h1>
+                    <h1 class="menu-title">The Calque Scripting Language</h1>
 
                     <div class="right-buttons">
                         <a href="../print.html" title="Print this book" aria-label="Print this book">
@@ -206,10 +206,16 @@ reports the source expression and suggests a guard such as:</p>
 be empty. A warning is not necessarily a bug: it says a proof was unavailable.</p>
 <h2 id="arithmetic"><a class="header" href="#arithmetic">Arithmetic</a></h2>
 <p><code>Int</code> is signed <code>i32</code>. The analyser tracks ranges where it can and warns about
-possible overflow, underflow, division by zero, and unsafe squares. Guard a
-calculation with the matching predicate:</p>
-<pre><code class="language-que">(when (+/safe? left right)
-  (+ left right))
+possible overflow, underflow, division by zero, and unsafe squares. Use the
+matching predicate in a value-producing <code>if</code>:</p>
+<pre><code class="language-que">(if (+/safe? left right)
+    (+ left right)
+    fallback)
+</code></pre>
+<p><code>when</code> is for effect-only bodies: its false branch is <code>nil</code>, so its body must
+also produce <code>nil</code>. It is appropriate when the guarded operation is a mutation:</p>
+<pre><code class="language-que">(when (+/safe? total amount)
+  (alter! total (+ total amount)))
 </code></pre>
 <p>Debug execution additionally inserts runtime guards for configured checks;
 optimized execution assumes the program’s invariants. For this reason, first

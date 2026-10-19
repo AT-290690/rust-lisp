@@ -3,7 +3,7 @@
     <head>
         <!-- Book generated using mdBook -->
         <meta charset="UTF-8">
-        <title>Calque — a typed Lisp for WebAssembly</title>
+        <title>The Calque Scripting Language</title>
         <meta name="robots" content="noindex">
 
 
@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-56af7dc9.js";
+            window.path_to_searchindex_js = "searchindex-d89d88fa.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-de53471e.js"></script>
+        <script src="toc-b7e24d2d.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -139,7 +139,7 @@
                         </button>
                     </div>
 
-                    <h1 class="menu-title">Calque — a typed Lisp for WebAssembly</h1>
+                    <h1 class="menu-title">The Calque Scripting Language</h1>
 
                     <div class="right-buttons">
                         <a href="print.html" title="Print this book" aria-label="Print this book">
@@ -230,18 +230,66 @@ que --lib types 'Table/*'
 que --lib source Table/get
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h1>
-<h2 id="install-the-compiler-and-a-runtime"><a class="header" href="#install-the-compiler-and-a-runtime">Install the compiler and a runtime</a></h2>
-<p>Calque emits WASI WebAssembly. The <code>que</code> command needs a compatible runtime on
-<code>PATH</code> to execute a program: <code>wasmtime</code> is the default; <code>wasmer</code> and
-<code>iwasm</code>/WAMR are also supported.</p>
-<p>Install the CLI and bundled library on Linux or macOS:</p>
-<pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/refs/heads/main/scripts/install.sh | bash
+<h1 id="installation"><a class="header" href="#installation">Installation</a></h1>
+<p>Calque uses the <code>que</code> command and <code>.que</code> source files. The compiler is
+installed separately from the WASI runtime that executes compiled programs.
+<code>wasmtime</code> is the default runtime; <code>wasmer</code> and <code>iwasm</code>/WAMR also work.</p>
+<h2 id="compiler-and-bundled-library"><a class="header" href="#compiler-and-bundled-library">Compiler and bundled library</a></h2>
+<h3 id="macos-and-linux"><a class="header" href="#macos-and-linux">macOS and Linux</a></h3>
+<p>The installer downloads the latest release for the current architecture and
+installs <code>que</code> in <code>/usr/local/bin</code> and the bundled library in
+<code>/usr/local/share/que</code>. It may ask for your <code>sudo</code> password.</p>
+<pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install.sh | bash
 </code></pre>
-<p>Then install your chosen WASI runtime. Select a non-default runtime per run:</p>
+<p>Install a compatible WASI runtime separately and ensure it is on <code>PATH</code>. Then
+verify the installation:</p>
+<pre><code class="language-sh">que --help
+wasmtime --version
+</code></pre>
+<h3 id="windows"><a class="header" href="#windows">Windows</a></h3>
+<p>Run this in PowerShell. It installs the latest <code>que.exe</code> and <code>que-lib.lisp</code>
+under <code>%LOCALAPPDATA%\\Programs\\Que</code> and adds its <code>bin</code> directory to your user
+<code>PATH</code>; administrator rights are not needed.</p>
+<pre><code class="language-powershell">irm https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install.ps1 | iex
+</code></pre>
+<p>Restart PowerShell after the installer finishes, then install a compatible
+WASI runtime separately (normally Wasmtime) and ensure it is on <code>PATH</code>:</p>
+<pre><code class="language-powershell">que --help
+wasmtime --version
+</code></pre>
+<p>For one invocation, choose a runtime other than the default:</p>
 <pre><code class="language-sh">que hello.que --runtime wasmer
 que hello.que --runtime /path/to/iwasm
 </code></pre>
+<h2 id="language-server-and-editors"><a class="header" href="#language-server-and-editors">Language server and editors</a></h2>
+<p><code>quelsp</code> is a separate executable. It provides diagnostics, type hovers,
+completion, signatures, formatting integration, and project-aware navigation.
+It does not need a WASI runtime merely to serve an editor.</p>
+<h3 id="macos-and-linux-1"><a class="header" href="#macos-and-linux-1">macOS and Linux</a></h3>
+<pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/lsp.sh | bash
+quelsp --help
+</code></pre>
+<h3 id="windows-1"><a class="header" href="#windows-1">Windows</a></h3>
+<p>Run this in PowerShell after the compiler installation:</p>
+<pre><code class="language-powershell">irm https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/lsp.ps1 | iex
+</code></pre>
+<p>Restart PowerShell if necessary, then check it:</p>
+<pre><code class="language-powershell">quelsp --help
+</code></pre>
+<p>The VS Code extension uses <code>quelsp</code> from <code>PATH</code> by default. To choose a
+specific executable, set <code>que.languageServer.path</code> to its full path. The
+included Neovim integration also looks for <code>quelsp</code> on <code>PATH</code>.</p>
+<p>For the managed Neovim workstation on a fresh Linux machine—Calque, <code>quelsp</code>,
+Wasmtime, Neovim, Telescope, Catppuccin, and the Calque setup—use:</p>
+<pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install-all-linux.sh | bash
+</code></pre>
+<p>See <a href="#projects-tests-and-editors">Projects, tests, and editors</a> for
+Neovim commands, VS Code configuration, and project behavior.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h1>
+<p>Install Calque, a WASI runtime, the language server, and optional editor
+integration by following <a href="#installation">Installation</a>. Once <code>que</code> is on
+your <code>PATH</code>, continue here.</p>
 <h2 id="first-program"><a class="header" href="#first-program">First program</a></h2>
 <p>Create <code>hello.que</code>:</p>
 <pre><code class="language-que">(let greeting "Hello, Calque!")
@@ -509,7 +557,9 @@ investigating performance.</p>
   (println! "wait"))
 </code></pre>
 <p><code>cond</code> tests each condition in order. Its last unpaired expression is the
-default branch. <code>when</code>, <code>when-not</code>, and <code>unless</code> are bundled macros.</p>
+default branch. <code>when</code>, <code>when-not</code>, and <code>unless</code> are bundled macros. <code>when</code>
+and <code>when-not</code> are for effects: their implicit false branch is <code>nil</code>, so use
+<code>if</code> or <code>cond</code> when both branches must produce a useful value.</p>
 <h2 id="while-and-loop"><a class="header" href="#while-and-loop"><code>while</code> and <code>loop</code></a></h2>
 <p><code>while</code> runs while its condition is true. The counter-style <code>loop</code> macro
 introduces and updates its named counter for you:</p>
@@ -825,10 +875,16 @@ reports the source expression and suggests a guard such as:</p>
 be empty. A warning is not necessarily a bug: it says a proof was unavailable.</p>
 <h2 id="arithmetic"><a class="header" href="#arithmetic">Arithmetic</a></h2>
 <p><code>Int</code> is signed <code>i32</code>. The analyser tracks ranges where it can and warns about
-possible overflow, underflow, division by zero, and unsafe squares. Guard a
-calculation with the matching predicate:</p>
-<pre><code class="language-que">(when (+/safe? left right)
-  (+ left right))
+possible overflow, underflow, division by zero, and unsafe squares. Use the
+matching predicate in a value-producing <code>if</code>:</p>
+<pre><code class="language-que">(if (+/safe? left right)
+    (+ left right)
+    fallback)
+</code></pre>
+<p><code>when</code> is for effect-only bodies: its false branch is <code>nil</code>, so its body must
+also produce <code>nil</code>. It is appropriate when the guarded operation is a mutation:</p>
+<pre><code class="language-que">(when (+/safe? total amount)
+  (alter! total (+ total amount)))
 </code></pre>
 <p>Debug execution additionally inserts runtime guards for configured checks;
 optimized execution assumes the program’s invariants. For this reason, first
@@ -1011,7 +1067,7 @@ que fmt --stdin
 <p>The formatter keeps compact short forms where possible, uses two-space-style
 nesting, preserves comments, and deliberately keeps runs of closing delimiters
 together rather than spreading them across lines.</p>
-<h2 id="language-server-and-editors"><a class="header" href="#language-server-and-editors">Language server and editors</a></h2>
+<h2 id="language-server-and-editors-1"><a class="header" href="#language-server-and-editors-1">Language server and editors</a></h2>
 <p><code>quelsp</code> provides diagnostics, inferred-type hover, completion, signatures,
 and project-aware definitions. The repository includes:</p>
 <ul>
@@ -1116,9 +1172,10 @@ are written in the language itself.</p>
 que --lib types 'map*'
 que --lib source Table/update!
 </code></pre>
-<p>This is the authoritative API reference between releases. The pages in this
-chapter explain the families and conventions rather than duplicating hundreds
-of signatures that could drift.</p>
+<p>This is the authoritative API reference between releases. Start with
+<a href="#functions-by-example">Functions by example</a> for copyable everyday use, then use the
+<a href="#complete-library-index">complete library index</a> and the live query when you need a
+specialist or implementation-level name.</p>
 <h2 id="naming-and-argument-order"><a class="header" href="#naming-and-argument-order">Naming and argument order</a></h2>
 <ul>
 <li><code>!</code> marks a mutating or effectful operation.</li>
@@ -1153,7 +1210,413 @@ of signatures that could drift.</p>
 </tbody>
 </table>
 </div>
-<p>The following pages cover the most important usage patterns.</p>
+<p>The following pages cover the most important usage patterns and the complete
+public library families.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="functions-by-example"><a class="header" href="#functions-by-example">Functions by example</a></h1>
+<p>This is the practical first stop for the bundled library: short examples of
+the functions you will use in normal programs. The <a href="#complete-library-index">complete library
+index</a> covers every exported family, including low-level helpers.</p>
+<p>Functions that transform a collection usually take that collection last, so
+they compose naturally with <code>|&gt;</code>. Operations ending in <code>!</code> mutate the first
+collection argument and normally return <code>nil</code>.</p>
+<pre><code class="language-que">(|&gt; [1 2 3 4]
+    (map (lambda (x) (* x x)))
+    (filter (lambda (x) (&gt; x 4)))
+    sum)
+; 25
+</code></pre>
+<h2 id="core-vectors"><a class="header" href="#core-vectors">Core vectors</a></h2>
+<p>Vectors are homogeneous and mutable. Strings are vectors of <code>Char</code>, so the
+same basic read operations work on both.</p>
+<pre><code class="language-que">(let xs [10 20 30])
+
+(length xs)             ; 3
+(get xs 1)              ; 20
+(car xs)                ; 10 — first element
+(cdr xs)                ; [20 30] — tail from offset 1
+(cdr xs 2)              ; [30] — tail from an explicit offset
+(first xs)              ; 10
+(last xs)               ; 30
+(at xs -1)              ; 30 — negative indexing helper
+(cons [0] xs)           ; [0 10 20 30] — concatenate two vectors
+</code></pre>
+<p><code>get</code>, <code>car</code>, <code>first</code>, <code>last</code>, and <code>pop-val!</code> require a valid, non-empty
+input. For a dynamic index, use <code>in-bounds?</code>, <code>Vector/get*</code>, or structure the
+loop so the analyser can prove the access.</p>
+<pre><code class="language-que">(if (in-bounds? xs index)
+    (get xs index)
+    fallback)
+
+(let {found? values} (Vector/get* index xs))
+(if found? (get values 0) fallback)
+</code></pre>
+<p>Mutation is direct and explicit:</p>
+<pre><code class="language-que">(let xs [10 20])
+(set! xs 0 99)          ; [99 20]
+(push! xs 30)           ; append, xs is now [99 20 30]
+(let last-value (pop-val! xs))
+(pop! xs)               ; remove the last value and return nil
+(empty! xs)             ; length becomes zero; allocation remains available
+</code></pre>
+<p><code>capacity!</code> reserves storage for later appends without changing length. It is
+effect-only. <code>capacity</code> is the non-mutating version: it copies first, reserves
+the copy, and returns it. <code>compact!</code> discards unused vector capacity.</p>
+<pre><code class="language-que">(let out [])
+(capacity! out 1000)
+(loop i (&lt; i 1000) (push! out i))
+
+(let copy-with-room (capacity 1000 out))
+(compact! out)
+</code></pre>
+<p>Useful names in this family are <code>Vector/new</code>, <code>Vector/of</code>, <code>Vector/first</code>,
+<code>Vector/last</code>, <code>Vector/at!</code>, <code>Vector/get-unsafe</code>, <code>Vector/set!</code>,
+<code>Vector/push!</code>, <code>Vector/pop!</code>, <code>Vector/pull!</code>, <code>Vector/reverse!</code>,
+<code>Vector/swap!</code>, <code>Vector/sort!</code>, <code>Vector/concat</code>, and <code>Vector/cons</code>. Their
+namespace forms are useful when an explicit, regular API is clearer than the
+short core spelling.</p>
+<h2 id="build-and-reshape-sequences"><a class="header" href="#build-and-reshape-sequences">Build and reshape sequences</a></h2>
+<p><code>range</code> includes both endpoints. Use <code>range/exclusive</code> when the end should be
+excluded; <code>range/dec</code> creates decimal values.</p>
+<pre><code class="language-que">(range 3 6)             ; [3 4 5 6]
+(range/exclusive 3 6)   ; [3 4 5]
+(range/dec 1 3)         ; [1.0 2.0 3.0]
+
+(replicate 3 "go")     ; ["go" "go" "go"]
+(fill 4 (lambda (i) (* i i)))
+(zeroes 4)              ; [0 0 0 0]
+(ones 4)                ; [1 1 1 1]
+</code></pre>
+<p>The common shape operations return fresh vectors:</p>
+<pre><code class="language-que">(reverse [1 2 3])                       ; [3 2 1]
+(flat [[1 2] [3] [4 5]])                ; [1 2 3 4 5]
+(flat-map (lambda (x) [x (* x 10)]) [1 2])
+; [1 10 2 20]
+
+(zip {[1 2] ["a" "b"]})                ; [{1 "a"} {2 "b"}]
+(unzip [{1 "a"} {2 "b"}])              ; {[1 2] ["a" "b"]}
+(zip-with + [1 2] [10 20])               ; [11 22]
+(interleave [1 2 3] [10 20 30])          ; [1 10 2 20 3 30]
+(intersperse 0 [1 2 3])                  ; [1 0 2 0 3]
+</code></pre>
+<p>For a contiguous part of a vector, <code>slice</code> uses an exclusive end. The
+<code>take/*</code> and <code>drop/*</code> names describe which side is retained or removed.</p>
+<pre><code class="language-que">(slice 1 4 [0 1 2 3 4])                 ; [1 2 3]
+(take/first 3 [0 1 2 3])                ; [0 1 2]
+(take/last 2 [0 1 2 3])                 ; [2 3]
+(drop/first 2 [0 1 2 3])                ; [2 3]
+(drop/last 2 [0 1 2 3])                 ; [0 1]
+(partition 2 [1 2 3 4 5])               ; [[1 2] [3 4] [5]]
+(window 3 [1 2 3 4])                    ; [[1 2 3] [2 3 4]]
+</code></pre>
+<p><code>take/while</code> retains the initial matching prefix; <code>drop/while</code> removes that
+prefix. <code>cycle</code>, <code>subset</code>, <code>permutation</code>, <code>combination</code>, and <code>combination/n</code>
+are combinatoric builders. <code>transpose</code> turns rows into columns; <code>Matrix/new</code>
+and <code>Matrix/for/i</code> are the more direct matrix tools.</p>
+<h2 id="map-filter-visit-and-fold"><a class="header" href="#map-filter-visit-and-fold">Map, filter, visit, and fold</a></h2>
+<p><code>map</code> transforms every element. The <code>/i</code> forms pass <code>(value index)</code>. <code>filter</code>
+and its alias <code>select</code> retain matching values; <code>exclude</code> removes them.</p>
+<pre><code class="language-que">(map (lambda (x) (* x 2)) [1 2 3])
+; [2 4 6]
+
+(map/i (lambda (x i) {i x}) ["a" "b"])
+; [{0 "a"} {1 "b"}]
+
+(filter even? [1 2 3 4])
+; [2 4]
+
+(exclude even? [1 2 3 4])
+; [1 3]
+</code></pre>
+<p><code>for</code> visits for effects and returns <code>nil</code>. <code>each</code> performs the same visit but
+returns the original vector, which is useful in a pipeline. Their <code>/i</code> forms
+also receive an index.</p>
+<pre><code class="language-que">(let seen [])
+(for (lambda (x) (push! seen x)) [1 2 3])
+; seen is [1 2 3]
+
+(|&gt; [1 2 3]
+    (each (lambda (x) (println! x)))
+    reverse)
+; [3 2 1]
+</code></pre>
+<p><code>reduce</code> combines a vector from left to right with an explicit initial value.
+<code>reduce/i</code> also supplies the index. <code>scan</code> returns all running reductions.</p>
+<pre><code class="language-que">(reduce + 0 [10 20 30])                 ; 60
+(reduce/i (lambda (total x i) (+ total (* x i))) 0 [2 3 4])
+; 11
+(scan + [1 2 3 4])                      ; [1 3 6 10]
+</code></pre>
+<p>The <code>/until</code> variants stop before the first value whose stop predicate is
+true. They exist for <code>map</code>, <code>reduce</code>, and <code>for</code>, with index-aware <code>/i</code> forms.</p>
+<pre><code class="language-que">(map/until (lambda (x) (* x 2)) (lambda (x) (&gt; x 3)) [1 2 3 4])
+; [2 4 6]
+</code></pre>
+<h2 id="search-tests-and-aggregates"><a class="header" href="#search-tests-and-aggregates">Search, tests, and aggregates</a></h2>
+<pre><code class="language-que">(find (lambda (x) (&gt; x 10)) [3 7 12 9]) ; 2, or -1 when absent
+(count odd? [1 2 3 4])                  ; 2
+(some? odd? [2 4 5])                    ; true
+(every? positive? [1 2 3])              ; true
+(some/i? (lambda (x i) (= x i)) [0 9]) ; true
+
+(sum [1 2 3])                           ; 6
+(product [2 3 4])                       ; 24
+(minimum [8 2 5])                       ; 2
+(maximum [8 2 5])                       ; 8
+(mean [2 4 6])                          ; 4
+(median [9 1 5])                        ; 5
+(avg 5 8)                               ; 6 — integer average
+</code></pre>
+<p>Decimal equivalents use <code>/dec</code>, <code>.</code> suffixes, or the matching decimal
+operator: <code>sum/dec</code>, <code>product/dec</code>, <code>minimum/dec</code>, <code>maximum/dec</code>,
+<code>mean/dec</code>, <code>median/dec</code>, <code>avg/dec</code>, <code>min.</code>, and <code>max.</code>. <code>count/int</code>,
+<code>count/char</code>, <code>count/dec</code>, and <code>count/bool</code> count a particular value using the
+appropriate equality operation.</p>
+<h2 id="ordering-and-grouping"><a class="header" href="#ordering-and-grouping">Ordering and grouping</a></h2>
+<p><code>sort</code> returns a sorted copy. <code>Vector/sort!</code> sorts the supplied vector in
+place. A comparator returns true when its first argument belongs before its
+second.</p>
+<pre><code class="language-que">(sort (lambda (a b) (&lt; a b)) [5 1 4 2])
+; [1 2 4 5]
+
+(let xs [5 1 4 2])
+(Vector/sort! xs (lambda (a b) (&lt; a b)))
+; xs is [1 2 4 5]
+</code></pre>
+<p><code>unique/int</code> and <code>unique/char</code> remove repeated values for their respective
+element types. <code>group</code> builds a table keyed by a function result:</p>
+<pre><code class="language-que">(group (lambda (x) (% x 2)) [1 2 3 4])
+; table with key 1 -&gt; [1 3], key 0 -&gt; [2 4]
+</code></pre>
+<h2 id="text-and-characters"><a class="header" href="#text-and-characters">Text and characters</a></h2>
+<p>Strings have type <code>[Char]</code>. <code>split</code> takes the separator first and text last;
+<code>join</code> takes the separator first and a vector of strings last.</p>
+<pre><code class="language-que">(split "," "red,green,blue")             ; ["red" "green" "blue"]
+(split/lines "one\ntwo")                  ; ["one" "two"]
+(split/words "one two")                   ; ["one" "two"]
+(join "/" ["usr" "local" "bin"])        ; "usr/local/bin"
+(trim "  Calque  ")                       ; "Calque"
+(slice 1 4 "Calque")                      ; "alq"
+</code></pre>
+<p>Use <code>lower</code>, <code>upper</code>, <code>digit?</code>, <code>space?</code>, and the <code>String/*</code> predicates for
+text logic:</p>
+<pre><code class="language-que">(lower 'Q')                               ; 'q'
+(upper 'q')                               ; 'Q'
+(digit? '7')                              ; true
+(String/starts? "Cal" "Calque")           ; true
+(String/contains? "lq" "Calque")          ; true
+(String/ends? "que" "Calque")             ; true
+(String/lt? "Ada" "Lin")                  ; true
+</code></pre>
+<p>Conversions are explicit:</p>
+<pre><code class="language-que">(String-&gt;Integer "42")                    ; 42
+(Integer-&gt;String 42)                      ; "42"
+(String-&gt;Dec "3.5")                       ; 3.5
+(Dec-&gt;String 3.5)                         ; "3.5"
+(Char-&gt;Int 'A')                           ; 65
+(Int-&gt;Char 65)                            ; 'A'
+</code></pre>
+<p>Other useful text functions are <code>String/find</code>, <code>String/find/last</code>,
+<code>String/matches-at?</code>, <code>String/damerau-levenshtein</code>, <code>String/quote</code>,
+<code>String/dquote</code>, and <code>String/prepend-zeroes</code>. <code>match?</code> compares two character
+vectors exactly.</p>
+<h2 id="numeric-helpers"><a class="header" href="#numeric-helpers">Numeric helpers</a></h2>
+<p>Normal <code>Int</code> arithmetic is signed <code>i32</code>; decimals use <code>Dec</code> and dotted
+operators. The predicate variants let a program establish a safety condition
+before using arithmetic in an optimized program.</p>
+<pre><code class="language-que">(abs -9)                                  ; 9
+(square 12)                               ; 144
+(gcd 18 24)                               ; 6
+(lcm 6 8)                                 ; 24
+(clamp 10 14)                             ; 10
+(clamp-range 0 10 -4)                     ; 0
+(even? 8)                                 ; true
+(odd? 9)                                  ; true
+(divisible? 3 12)                         ; true
+(expt 3 2)                                ; 8 — exponent first
+(sqrt 81)                                 ; 9
+</code></pre>
+<p>Use <code>positive?</code>, <code>negative?</code>, <code>zero?</code>, <code>one?</code>, <code>negative-one?</code>, <code>invert</code>,
+<code>delta</code>, <code>min</code>, <code>max</code>, <code>floor</code>, <code>ceil</code>, and <code>Int/euclidean-mod</code> for the
+corresponding small operations. Decimal versions include <code>abs.</code>, <code>sqrt.</code>,
+<code>expt.</code>, <code>clamp/dec</code>, <code>delta/dec</code>, and <code>/dec?</code> predicates. <code>Integer-&gt;Bits</code>,
+<code>Bits-&gt;Integer</code>, <code>Integer-&gt;Digits</code>, <code>Digits-&gt;Integer</code>, and their character
+versions convert representations. <code>random/int</code> and <code>random/dec</code> are
+deterministic seed-to-value functions.</p>
+<h2 id="tables-sets-heaps-deques-and-matrices"><a class="header" href="#tables-sets-heaps-deques-and-matrices">Tables, sets, heaps, deques, and matrices</a></h2>
+<p>Tables are mutable hash maps. Put the table first for mutation; use the key
+first for lookup and membership so those work in a pipeline.</p>
+<pre><code class="language-que">(let scores (Table/new))
+(Table/set! scores "Ada" 10)
+(Table/update-or! scores "Ada" (lambda () 0) (lambda (n) (+ n 1)))
+
+(Table/has? "Ada" scores)                ; true
+(Table/get-unsafe "Ada" scores)          ; 11
+(Table/entries scores)                    ; [{"Ada" 11}]
+(Table/keys scores)                       ; ["Ada"]
+(Table/values scores)                     ; [11]
+</code></pre>
+<p><code>Table/get</code> returns the internal matching entry vector; prefer <code>Table/get*</code>
+for a <code>{found? values}</code> result or <code>Table/get-unsafe</code> after a <code>Table/has?</code>
+check. <code>Table/remove!</code>, <code>Table/drop!</code>, <code>Table/merge!</code>, <code>Table/resize!</code>, and
+<code>Table/compact!</code> mutate; <code>Table/keep</code>, <code>Table/omit</code>, and <code>Table/merge</code> return
+new tables. <code>Table/count</code> and <code>Table/frequency</code> build counting tables.</p>
+<pre><code class="language-que">(let tags (Set/new))
+(Set/add! tags "fast")
+(Set/add! tags "typed")
+(Set/has? "fast" tags)                   ; true
+(Set/remove! tags "fast")
+(Set/values tags)                         ; ["typed"]
+</code></pre>
+<p>Sets provide <code>intersection</code>, <code>union</code>, <code>difference</code>, and <code>xor</code>, as well as
+<code>Set/new/capacity</code>, <code>Set/resize!</code>, and <code>Set/compact!</code> for allocation control.</p>
+<pre><code class="language-que">(let heap [])
+(let before? (lambda (a b) (&lt; a b)))
+(Heap/push! heap 4 before?)
+(Heap/push! heap 1 before?)
+(Heap/peek! heap)                         ; 1
+(Heap/pop! heap before?)
+</code></pre>
+<p><code>Que/new</code> creates a deque with a default value. Use <code>Que/append!</code>/<code>Que/push!</code>
+and <code>Que/prepend!</code> to add at either end; <code>Que/pop!</code> and <code>Que/tail!</code> remove;
+<code>Que/first</code>, <code>Que/last</code>, <code>Que/peek</code>, <code>Que/get</code>, and <code>Que/at</code> read it.</p>
+<pre><code class="language-que">(let matrix (Matrix/new (lambda (y x) (+ (* y 10) x)) 3 2))
+; [[0 1] [10 11] [20 21]]
+(Matrix/in-bounds? 1 2 matrix)            ; true
+</code></pre>
+<h2 id="big-integers-dates-metadata-and-options"><a class="header" href="#big-integers-dates-metadata-and-options">Big integers, dates, metadata, and options</a></h2>
+<p><code>BigInt/*</code> represents an unsigned arbitrary-precision integer as a digit
+vector; <code>SignedBigInt/*</code> uses <code>{Bool [Int]}</code>. Construct them from text and
+stay within the corresponding namespace for arithmetic:</p>
+<pre><code class="language-que">(let a (BigInt/new "999999999999999999"))
+(Digits-&gt;Chars (BigInt/add a (BigInt/new "1")))
+; "1000000000000000000"
+</code></pre>
+<p><code>Date/iso-&gt;Vector</code>, <code>Date/iso-z-&gt;Vector</code>, <code>Date/year</code>, <code>Date/month</code>,
+<code>Date/day</code>, and <code>Date/hour</code> work with the library’s date-vector representation.
+<code>Meta/parse</code>, <code>Meta/table</code>, <code>Meta/get</code>, and <code>Meta/has?</code> support simple
+metadata tokens. <code>true/option</code>, <code>false/option</code>, and <code>resolve/option</code> use the
+ordinary tuple representation <code>{Bool value}</code> for success-or-default flows.</p>
+<h2 id="discover-anything-not-shown-here"><a class="header" href="#discover-anything-not-shown-here">Discover anything not shown here</a></h2>
+<p>The installed compiler is the exact reference for the library bundled with
+that installation. Search by shell-style glob and inspect a definition when
+needed:</p>
+<pre><code class="language-sh">que --lib names 'Table/*'
+que --lib types 'map*'
+que --lib source Table/update-or!
+</code></pre>
+<p>The <a href="#complete-library-index">complete library index</a> explains how the remaining specialist
+and implementation-level names are organized.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="complete-library-index"><a class="header" href="#complete-library-index">Complete library index</a></h1>
+<p>Calque ships a large library, including general-purpose functions, specialist
+algorithms, compatibility aliases, and low-level building blocks used to
+implement the higher-level APIs. The normal public starting points are shown
+with runnable code in <a href="#functions-by-example">Functions by example</a>.</p>
+<p>This page tells you where every exported name belongs. The compiler installed
+on your machine is the authoritative source for exact signatures and source:</p>
+<pre><code class="language-sh">que --lib names '*'
+que --lib types 'Table/*'
+que --lib source Table/update-or!
+</code></pre>
+<h2 id="core-language-operations"><a class="header" href="#core-language-operations">Core language operations</a></h2>
+<p>The compiler provides vector and tuple primitives: <code>length</code>, <code>get</code>, <code>set!</code>,
+<code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>car</code>, <code>cdr</code>, <code>cons</code>,
+<code>fst</code>, <code>snd</code>, <code>box</code>, and <code>swap!</code>. It also provides arithmetic,
+comparison, bitwise, boolean, character, decimal, I/O, serialization, and
+filesystem primitives. These are described in the language chapters rather
+than duplicated as library implementations.</p>
+<p>Macros include <code>cond</code>, <code>when</code>, <code>when-not</code>, <code>unless</code>, <code>|&gt;</code>, <code>&lt;|</code>, <code>comp</code>,
+<code>apply</code>, <code>loop</code>, <code>loop/for</code>, <code>loop/in</code>, <code>loop/in/i</code>, <code>times</code>, mutation sugar
+such as <code>++</code> and <code>+=</code>, and compile-time helpers such as <code>test</code>.</p>
+<h2 id="functional-and-vector-helpers"><a class="header" href="#functional-and-vector-helpers">Functional and vector helpers</a></h2>
+<p>The unnamespaced functional collection surface is in <code>lisp/fp.lisp</code>:</p>
+<ul>
+<li>Construction and shape: <code>range</code>, <code>range/inclusive</code>, <code>range/exclusive</code>,
+<code>range/dec</code>, <code>fill</code>, <code>replicate</code>, <code>copy</code>, <code>reverse</code>, <code>flat</code>, <code>flat-map</code>,
+<code>zip</code>, <code>unzip</code>, <code>zip-with</code>, <code>transpose</code>, <code>interleave</code>, <code>intersperse</code>,
+<code>partition</code>, <code>window</code>, <code>slice</code>, <code>take/first</code>, <code>take/last</code>, <code>drop/first</code>,
+<code>drop/last</code>, <code>take/while</code>, <code>drop/while</code>, <code>cycle</code>, <code>subset</code>,
+<code>permutation</code>, <code>combination</code>, <code>combination/n</code>, and <code>scan</code>.</li>
+<li>Traversal: <code>map</code>, <code>map/i</code>, <code>filter</code>, <code>filter/i</code>, <code>select</code>, <code>exclude</code>,
+<code>for</code>, <code>for/i</code>, <code>each</code>, <code>each/i</code>, <code>reduce</code>, <code>reduce/i</code>, <code>map/until</code>,
+<code>map/until/i</code>, <code>reduce/until</code>, <code>reduce/until/i</code>, <code>for/until</code>, and
+<code>for/until/i</code>.</li>
+<li>Queries and aggregation: <code>empty?</code>, <code>not-empty?</code>, <code>in-bounds?</code>, <code>find</code>,
+<code>count</code>, <code>count/int</code>, <code>count/char</code>, <code>count/dec</code>, <code>count/bool</code>, <code>some?</code>,
+<code>some/i?</code>, <code>every?</code>, <code>every/i?</code>, <code>sum</code>, <code>sum/dec</code>, <code>product</code>,
+<code>product/dec</code>, <code>minimum</code>, <code>minimum/dec</code>, <code>maximum</code>, <code>maximum/dec</code>, <code>mean</code>,
+<code>mean/dec</code>, <code>median</code>, <code>median/dec</code>, <code>avg</code>, and <code>avg/dec</code>.</li>
+<li>Ordering and specialized operations: <code>sort</code>, <code>group</code>, <code>unique/int</code>,
+<code>unique/char</code>, <code>map/adjacent</code>, <code>map/tuple</code>, <code>map/fst</code>, <code>map/snd</code>,
+<code>resolve/option</code>, <code>autocorrect</code>, <code>match?</code>, <code>cartesian-product</code>, and
+<code>neighborhood</code>.</li>
+</ul>
+<p>The <code>Vector/*</code> namespace supplies regular versions and lower-level helpers:
+<code>Vector/new</code>, <code>Vector/of</code>, <code>Vector/first</code>, <code>Vector/last</code>, <code>Vector/at!</code>,
+<code>Vector/get*</code>, <code>Vector/get-unsafe</code>, <code>Vector/in-bounds?</code>, <code>Vector/set!</code>,
+<code>Vector/push!</code>, <code>Vector/pop!</code>, <code>Vector/pull!</code>, <code>Vector/append!</code>,
+<code>Vector/concat</code>, <code>Vector/cons</code>, <code>Vector/reverse!</code>, <code>Vector/sort!</code>, and
+<code>Vector/swap!</code>. Names ending in <code>/raw</code> are implementation-level variants;
+prefer the non-raw name unless you are extending the library itself.</p>
+<h2 id="text-numbers-and-conversion"><a class="header" href="#text-numbers-and-conversion">Text, numbers, and conversion</a></h2>
+<ul>
+<li>Text: <code>split</code>, <code>split/lines</code>, <code>split/words</code>, <code>split/commas</code>, <code>join</code>,
+<code>trim</code>, <code>trim/left</code>, <code>trim/right</code>, <code>lower</code>, <code>upper</code>, <code>digit?</code>, <code>space?</code>,
+<code>String/starts?</code>, <code>String/ends?</code>, <code>String/contains?</code>, <code>String/equal?</code>,
+<code>String/lt?</code>, <code>String/lte?</code>, <code>String/gt?</code>, <code>String/gte?</code>, <code>String/find</code>,
+<code>String/find/last</code>, <code>String/matches-at?</code>, <code>String/damerau-levenshtein</code>,
+<code>String/quote</code>, <code>String/dquote</code>, and <code>String/prepend-zeroes</code>.</li>
+<li>Conversions: <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code>, <code>String-&gt;Dec</code>,
+<code>Dec-&gt;String</code>, <code>String-&gt;Bool</code>, <code>String-&gt;Vector</code>, <code>Char-&gt;Int</code>, <code>Int-&gt;Char</code>,
+<code>Char-&gt;Bool</code>, <code>Bool-&gt;Char</code>, <code>Bool-&gt;Int</code>, <code>Int-&gt;Bool</code>, <code>Int-&gt;Dec</code>,
+<code>Dec-&gt;Int</code>, <code>Integer-&gt;Bits</code>, <code>Bits-&gt;Integer</code>, <code>Integer-&gt;Digits</code>,
+<code>Digits-&gt;Integer</code>, <code>Digits-&gt;Chars</code>, <code>Chars-&gt;Digits</code>, <code>Chars-&gt;Integer</code>, and
+their <code>/base</code> or <code>/dec</code> variants.</li>
+<li>Integer math: <code>abs</code>, <code>square</code>, <code>gcd</code>, <code>lcm</code>, <code>min</code>, <code>max</code>, <code>clamp</code>,
+<code>clamp-range</code>, <code>sqrt</code>, <code>expt</code>, <code>floor</code>, <code>ceil</code>, <code>delta</code>, <code>divisible?</code>,
+<code>positive?</code>, <code>negative?</code>, <code>zero?</code>, <code>one?</code>, <code>negative-one?</code>, <code>even?</code>,
+<code>odd?</code>, <code>invert</code>, and <code>Int/euclidean-mod</code>.</li>
+<li>Decimal math mirrors the applicable integer functions with <code>.</code> or <code>/dec</code>
+spellings. Safety predicates are <code>+/safe?</code>, <code>-/safe?</code>, <code>*/safe?</code>,
+<code>/safe?</code>, <code>%/safe?</code>, plus decimal equivalents such as <code>+./safe?</code>.</li>
+<li>Deterministic pseudo-random helpers are <code>random</code>, <code>random/int</code>, <code>random.</code>,
+and <code>random/dec</code>; mathematical constants live under <code>const/dec/*</code>.</li>
+</ul>
+<h2 id="structured-data"><a class="header" href="#structured-data">Structured data</a></h2>
+<ul>
+<li>Tables: <code>Table/new</code>, <code>Table/new/capacity</code>, <code>Table/set!</code>, <code>Table/get</code>,
+<code>Table/get*</code>, <code>Table/get-unsafe</code>, <code>Table/has?</code>, <code>Table/remove!</code>,
+<code>Table/drop!</code>, <code>Table/keep</code>, <code>Table/omit</code>, <code>Table/entries</code>, <code>Table/keys</code>,
+<code>Table/values</code>, <code>Table/update!</code>, <code>Table/update-or!</code>, <code>Table/push-or!</code>,
+<code>Table/count</code>, <code>Table/frequency</code>, <code>Table/merge</code>, <code>Table/merge!</code>,
+<code>Table/resize!</code>, <code>Table/compact!</code>, and <code>Table/count-entries</code>.</li>
+<li>Sets: <code>Set/new</code>, <code>Set/new/capacity</code>, <code>Set/add!</code>, <code>Set/remove!</code>,
+<code>Set/has?</code>, <code>Set/values</code>, <code>Set/size</code>, <code>Set/count</code>, <code>Set/intersection</code>,
+<code>Set/union</code>, <code>Set/difference</code>, <code>Set/xor</code>, <code>Set/resize!</code>, and <code>Set/compact!</code>.</li>
+<li>Heaps: <code>Heap/push!</code>, <code>Heap/pop!</code>, <code>Heap/peek!</code>, <code>Heap/replace!</code>,
+<code>Heap/empty!</code>, <code>Heap/empty?</code>, <code>Heap/not-empty?</code>, <code>Heap/parent</code>,
+<code>Heap/left</code>, <code>Heap/right</code>, <code>Heap/sift-up!</code>, and <code>Heap/sift-down!</code>.</li>
+<li>Deques: <code>Que/new</code>, <code>Que/length</code>, <code>Que/empty?</code>, <code>Que/not-empty?</code>,
+<code>Que/get</code>, <code>Que/at</code>, <code>Que/peek</code>, <code>Que/first</code>, <code>Que/last</code>, <code>Que/append!</code>,
+<code>Que/enque!</code>, <code>Que/push!</code>, <code>Que/prepend!</code>, <code>Que/pop!</code>, <code>Que/tail!</code>,
+<code>Que/deque!</code>, and <code>Que/empty!</code>.</li>
+<li>Matrices: <code>Matrix/new</code>, <code>Matrix/in-bounds?</code>, <code>Matrix/for/i</code>, and
+<code>Matrix-&gt;String</code>. <code>neighborhood/*</code> constants provide common coordinate
+kernels.</li>
+</ul>
+<h2 id="specialist-representations"><a class="header" href="#specialist-representations">Specialist representations</a></h2>
+<p><code>BigInt/*</code> implements unsigned arbitrary-precision arithmetic, including
+<code>new</code>, <code>add</code>, <code>sub</code>, <code>mul</code>, <code>div</code>, <code>mod</code>, comparisons, <code>pow</code>, <code>square</code>,
+<code>sum</code>, <code>product</code>, and <code>range</code>. <code>SignedBigInt/*</code> supplies the corresponding
+signed representation. <code>Date/*</code> extracts pieces of the date-vector format;
+<code>Meta/*</code> parses lightweight metadata; <code>Payload/get</code> accesses embedded payload
+text.</p>
+<p>The following names are intentionally low-level: <code>*/raw</code>, <code>*/unchecked!</code>,
+<code>Table/hash</code>, <code>Set/hash</code>, allocation/bucket helpers, implementation constants,
+and aliases maintained for library implementation. They are exported because
+the library is Calque source, not because new applications should depend on
+their representation. Query their source before using them.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="functional-collections"><a class="header" href="#functional-collections">Functional collections</a></h1>
 <p>The central functional transforms are data-last.</p>
@@ -1261,7 +1724,7 @@ and string-specific operations:</p>
 <code>String-&gt;Dec</code>, <code>Dec-&gt;String</code>, <code>Char-&gt;Int</code>, and <code>Int-&gt;Char</code>. Conversion is
 explicit because an <code>Int</code>, a decimal fixed-point value, a character, and text
 remain distinct static types.</p>
-<h2 id="numeric-helpers"><a class="header" href="#numeric-helpers">Numeric helpers</a></h2>
+<h2 id="numeric-helpers-1"><a class="header" href="#numeric-helpers-1">Numeric helpers</a></h2>
 <p>In addition to primitive arithmetic, the library provides range construction,
 clamping, min/max, absolute value, parity predicates, bit conversion, random
 helpers, and decimal-specific aliases. Big integers are a library-level digit
@@ -1289,7 +1752,7 @@ and, for optimized code, compare the same expected result with <code>--opt</code
 <p>This program counts right/down paths through a square grid. It demonstrates a
 small mutable vector, capacity reservation, an analyzable indexed loop, and an
 explicit arithmetic safety guard.</p>
-<pre><code class="language-lisp">; use-strict-warnings!
+<pre><code class="language-que">; use-strict-warnings!
 
 ; How many routes go from the top-left to the bottom-right of a 10 × 10 grid
 ; when each step goes only right or down?
@@ -1325,7 +1788,10 @@ que explain grid-paths.que --opt
 <p>Closed enums remain typed values even though their runtime representation is a
 compact <code>i32</code> tag. That makes them suitable for exhaustive dispatch and fast
 table keys.</p>
-<pre><code class="language-lisp">(enum Shape Rock Paper Scissors)
+<pre><code class="language-que">; A closed enum can be used as a typed hash-table key and survives
+; serialize/deserialize when the destination type is declared.
+
+(enum Shape Rock Paper Scissors)
 
 (sig points [[{ Shape Int }]])
 (let points (Table/new))
@@ -1334,7 +1800,7 @@ table keys.</p>
 
 (let text (serialize points))
 
-; The decoder needs a concrete expected type.
+; `deserialize` needs a concrete expected type.
 (sig restored [[{ Shape Int }]])
 (let restored (deserialize text))
 
@@ -1344,7 +1810,11 @@ table keys.</p>
   Rock score
   Paper 0
   Scissors 0)
-; 1
+</code></pre>
+<p>The runnable source is
+<a href="https://github.com/AT-290690/que-script/blob/main/examples/demo/04-enum-table-round-trip.que"><code>examples/demo/04-enum-table-round-trip.que</code></a>.
+From a checkout, run it with:</p>
+<pre><code class="language-sh">que examples/demo/04-enum-table-round-trip.que --debug
 </code></pre>
 <p>The <code>[[{ Shape Int }]]</code> annotation is only needed because <code>deserialize</code> needs
 to know which decoder to generate. It is the current library representation of
