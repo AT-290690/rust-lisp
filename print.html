@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-4631bae3.js";
+            window.path_to_searchindex_js = "searchindex-0ff6845a.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-61b5ba55.js"></script>
+        <script src="toc-2f0ff30a.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -977,6 +977,117 @@ not use a host import to manufacture a cyclic Calque object; it bypasses the
 source-level proof that keeps ordinary programs cycle-free. See <a href="#ffi-and-host-imports">FFI and host
 imports</a> for the ABI boundary.</p>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="performance-guide"><a class="header" href="#performance-guide">Performance guide</a></h1>
+<p>Calque is designed so ordinary, direct source can compile efficiently. Start
+with clear code, establish its invariants in <code>--debug</code>, inspect the optimized
+shape with <code>que explain</code>, and measure the complete program. Do not optimize
+from source appearance alone.</p>
+<pre><code class="language-sh">que program.que --debug
+que explain program.que --opt
+que program.que --opt
+</code></pre>
+<p><code>que explain</code> reports static generated-code facts—such as remaining
+allocations, direct calls, and checked or unchecked reads. It is not a timing
+profiler. Use a repeatable wall-clock benchmark for timing decisions.</p>
+<h2 id="choose-the-simplest-fitting-shape"><a class="header" href="#choose-the-simplest-fitting-shape">Choose the simplest fitting shape</a></h2>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Situation</th><th>Prefer</th></tr>
+</thead>
+<tbody>
+<tr><td>One clear collection transformation</td><td>`</td></tr>
+<tr><td>Reusable transformation with no meaningful input name</td><td><code>comp</code></td></tr>
+<tr><td>Tight numeric or indexed work</td><td><code>loop</code> / <code>while</code> and explicit mutable state</td></tr>
+<tr><td>A known burst of appends</td><td><code>capacity!</code> before <code>push!</code></td></tr>
+<tr><td>Reusing a temporary vector</td><td><code>empty!</code>, retaining its capacity</td></tr>
+<tr><td>A completed compute-heavy program</td><td>the repository wasm2c/native-C path, after measuring</td></tr>
+</tbody>
+</table>
+</div>
+<p>Functional collection code is not automatically slow. The optimizer can fuse
+supported chains of collection operations, avoiding intermediate vectors. Keep
+the natural pipeline first:</p>
+<pre><code class="language-que">(let sum-positive-squares
+  (lambda (xs)
+    (|&gt; xs
+        (select (lambda (n) (&gt; n 0)))
+        (map (lambda (n) (* n n)))
+        sum)))
+</code></pre>
+<p>Then use <code>que explain program.que --opt</code> to see whether the generated shape
+still contains avoidable allocations. An opaque callback, escaping collection,
+or operation with different semantics may correctly prevent fusion.</p>
+<h2 id="allocate-deliberately"><a class="header" href="#allocate-deliberately">Allocate deliberately</a></h2>
+<p>Vectors grow when necessary, but a vector that repeatedly grows must allocate
+and copy backing storage. Reserve once when the eventual append count is known:</p>
+<pre><code class="language-que">(let squares [])
+(capacity! squares 1000)
+
+(loop i (&lt; i 1000)
+  (push! squares (* i i)))
+</code></pre>
+<p><code>capacity!</code> is only a reservation: it does not set the length or impose a
+maximum. If the same scratch vector is refilled many times, <code>empty!</code> resets
+its length while keeping that capacity.</p>
+<p>For a table with an approximate number of entries, use <code>Table/new/capacity</code>.
+This avoids repeated hash-table resizing; it does not change table semantics.</p>
+<h2 id="make-proofs-visible"><a class="header" href="#make-proofs-visible">Make proofs visible</a></h2>
+<p>The analyser and optimizer work from source-level facts. A counted loop makes
+both the access invariant and the intended work clear:</p>
+<pre><code class="language-que">(let total 0)
+(loop i (&lt; i (length xs))
+  (alter! total (+ total (get xs i))))
+</code></pre>
+<p>Here the compiler can establish <code>0 &lt;= i &lt; length(xs)</code>. In optimized output it
+can use that proof to remove the corresponding bounds check. If an invariant
+comes from input validation or another source the analyser cannot see, state it
+as a guard rather than assuming <code>--opt</code> will discover it:</p>
+<pre><code class="language-que">(if (and (&gt;= index 0) (&lt; index (length xs)))
+    (get xs index)
+    fallback)
+</code></pre>
+<p>Likewise, use arithmetic safety predicates when a calculation reaches the
+edge of <code>Int</code>’s signed <code>i32</code> range:</p>
+<pre><code class="language-que">(if (+/safe? left right)
+    (+ left right)
+    fallback)
+</code></pre>
+<h2 id="keep-ownership-simple"><a class="header" href="#keep-ownership-simple">Keep ownership simple</a></h2>
+<p>Vectors, tuples, strings, and closures use deterministic reference counting.
+The compiler can transfer a fresh value, borrow an immutable value, and remove
+some final-use retains/releases. It has the most freedom when a value has an
+obvious owner and does not escape through an unknown callback or mutable alias.</p>
+<p>This is a reason to write direct expressions rather than manually simulating
+memory management. There is no source-level retain/release operation to call.
+See <a href="#memory-management-and-ownership">Memory management and ownership</a> for the model and its
+no-cycle rule.</p>
+<h2 id="recursion-and-loops"><a class="header" href="#recursion-and-loops">Recursion and loops</a></h2>
+<p>Use a loop when the algorithm is naturally iterative. Direct self tail calls
+that meet the current tail-call safety policy are lowered to a Wasm local loop
+in optimized builds, so they also work through wasm2c. Non-tail recursion,
+such as naive Fibonacci, still consumes one frame per outstanding call and
+cannot be converted into a loop without changing the algorithm.</p>
+<pre><code class="language-que">(letrec count-down
+  (lambda (n total)
+    (if (= n 0)
+        total
+        (count-down (- n 1) (+ total 1)))))
+</code></pre>
+<p>Use <code>que explain program.que --opt</code> and a real benchmark before choosing
+between the recursive and loop forms.</p>
+<h2 id="select-an-execution-path-after-measuring"><a class="header" href="#select-an-execution-path-after-measuring">Select an execution path after measuring</a></h2>
+<p>The ordinary command uses an external WASI runtime, normally Wasmtime:</p>
+<pre><code class="language-sh">que program.que --opt
+</code></pre>
+<p>For a completed compute-heavy program, the repository can lower the same Wasm
+through wasm2c and a C compiler:</p>
+<pre><code class="language-sh">./scripts/compile-native-c.sh program.que
+</code></pre>
+<p>The source language and correctness pipeline are the same in both cases. The
+best path depends on startup cost, workload length, host compiler, and runtime;
+benchmark the exact deployment shape rather than assuming native C always wins.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="pipelines-and-composition"><a class="header" href="#pipelines-and-composition">Pipelines and composition</a></h1>
 <p>Most functional library APIs take their data argument last. That makes a
 pipeline read from input to result:</p>
@@ -1486,6 +1597,113 @@ que --env
 </code></pre>
 <p><code>--env</code> lists compiler/runtime environment settings, including optimization,
 debug, decimal-scale, and runtime selection settings.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="debugging-cookbook"><a class="header" href="#debugging-cookbook">Debugging cookbook</a></h1>
+<p>Calque separates type errors, static warnings, runtime guards, permissions,
+and generated-code inspection. Start with the mode that preserves the most
+information:</p>
+<pre><code class="language-sh">que program.que --debug
+</code></pre>
+<p>After the program’s invariants are established, inspect and run the optimized
+form:</p>
+<pre><code class="language-sh">que explain program.que --opt
+que program.que --opt
+</code></pre>
+<h2 id="undefined-variable-or-an-unexpected-binding"><a class="header" href="#undefined-variable-or-an-unexpected-binding">“Undefined variable” or an unexpected binding</a></h2>
+<p>Bindings are lexical. <code>let</code> creates an immutable local, <code>mut</code> a mutable local,
+and <code>letrec</code> is required only when a binding calls itself. Check for a name
+outside its scope or a recursive function written with <code>let</code>:</p>
+<pre><code class="language-que">; Wrong: `factorial` is not in scope while its value is being defined.
+(let factorial
+  (lambda (n) (factorial (- n 1))))
+
+; Right.
+(letrec factorial
+  (lambda (n)
+    (if (&lt;= n 1) 1 (* n (factorial (- n 1))))))
+</code></pre>
+<p>For macro-heavy code, inspect the expanded source. This distinguishes your
+source binding from a generated temporary without exposing implementation
+details in normal diagnostics:</p>
+<pre><code class="language-sh">que program.que --emit source --out expanded.que
+</code></pre>
+<h2 id="expected--but-got-"><a class="header" href="#expected--but-got-">“Expected … but got …”</a></h2>
+<p>The error normally identifies the argument or expression that conflicts. Ask
+the compiler for the inferred shape of a library operation instead of guessing:</p>
+<pre><code class="language-sh">que --lib types 'Table/get*'
+que --lib types 'map*'
+</code></pre>
+<p>At a public boundary, add a <code>sig</code> to state the intended type. This both records
+the contract and makes an accidental specialization easier to find:</p>
+<pre><code class="language-que">(sig square (Int -&gt; Int))
+(let square (lambda (n) (* n n)))
+</code></pre>
+<p>Check destructuring too: <code>[head . tail]</code> needs a non-empty vector, while
+<code>{left right}</code> expects a two-field tuple.</p>
+<h2 id="a-bounds-empty-vector-or-arithmetic-warning"><a class="header" href="#a-bounds-empty-vector-or-arithmetic-warning">A bounds, empty-vector, or arithmetic warning</a></h2>
+<p>Warnings mean the analyser could not prove the required fact. They are not all
+runtime failures, but they deserve an explicit decision. Run the full report:</p>
+<pre><code class="language-sh">que explain program.que --opt
+</code></pre>
+<p>Make the condition visible at the use site:</p>
+<pre><code class="language-que">(if (and (&gt;= index 0) (&lt; index (length xs)))
+    (get xs index)
+    fallback)
+</code></pre>
+<p>For arithmetic, make both outcomes value-producing with <code>if</code> or <code>cond</code>:</p>
+<pre><code class="language-que">(if (+/safe? total amount)
+    (+ total amount)
+    total)
+</code></pre>
+<p><code>when</code> is for an effect-only body and returns <code>nil</code> when its condition is
+false. Use it for a guarded mutation, not to produce an <code>Int</code> result.</p>
+<h2 id="a-debug-runtime-trap"><a class="header" href="#a-debug-runtime-trap">A debug runtime trap</a></h2>
+<p><code>--debug</code> retains configured runtime guards for operations that static analysis
+could not prove safe. A trap such as integer overflow, division by zero, or an
+out-of-bounds vector access is evidence that the input reached an invalid
+state—not merely a compiler warning.</p>
+<p>Fix the source invariant first. The diagnostic points at the original Calque
+source span; if a macro is involved, emit expanded source as shown above. Once
+the program is correct in debug mode, use <code>--opt</code> for release timing.</p>
+<h2 id="an-operation-is-denied-at-runtime"><a class="header" href="#an-operation-is-denied-at-runtime">An operation is denied at runtime</a></h2>
+<p>File, terminal, clock, and stdin functions require explicit permissions under
+the external WASI runtime. Grant only the needed groups:</p>
+<pre><code class="language-sh">que report.que --debug --allow read print
+</code></pre>
+<p>Use <code>--allow all</code> only for trusted local experiments. See <a href="#effects-and-permissions">Effects and
+permissions</a> for the operation-to-permission mapping.</p>
+<h2 id="the-optimized-program-differs-from-debug"><a class="header" href="#the-optimized-program-differs-from-debug">The optimized program differs from debug</a></h2>
+<p>That is a compiler bug, not an expected trade-off. Preserve the smallest source
+that demonstrates it and compare the forms:</p>
+<pre><code class="language-sh">que program.que --debug
+que program.que --opt
+que program.que --opt --emit opt-source --out optimized.que
+que program.que --opt --emit wat --out program.wat
+</code></pre>
+<p>If you use the native path, compare that too:</p>
+<pre><code class="language-sh">./scripts/compile-native-c.sh program.que
+</code></pre>
+<p>Record the compiler version, command lines, expected output, actual output,
+and the smallest reproducer. Do not work around a debug/optimized mismatch by
+shipping the unverified optimized result.</p>
+<h2 id="a-program-is-correct-but-unexpectedly-slow"><a class="header" href="#a-program-is-correct-but-unexpectedly-slow">A program is correct but unexpectedly slow</a></h2>
+<p>First find out whether the issue is generated shape or measured runtime:</p>
+<pre><code class="language-sh">que explain program.que --opt
+que program.que --opt
+</code></pre>
+<p>The explain report can reveal remaining allocations, dynamic application, or
+checked accesses. It cannot tell you elapsed time. Benchmark multiple complete
+runs, then inspect optimized source and WAT only after the benchmark identifies
+a real hot path. The <a href="#performance-guide">Performance guide</a> gives the
+common source-level choices.</p>
+<h2 id="editor-diagnostics-look-stale"><a class="header" href="#editor-diagnostics-look-stale">Editor diagnostics look stale</a></h2>
+<p>Save the buffer and confirm the command-line compiler sees the same source:</p>
+<pre><code class="language-sh">que program.que --debug
+</code></pre>
+<p>Then confirm the editor launched the intended <code>quelsp</code> from <code>PATH</code>. Restarting
+the language server is appropriate after installing a new release. If the
+command-line and editor diagnostics disagree on saved source, keep the source
+and both messages as a language-server bug report.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="projects-tests-and-editors"><a class="header" href="#projects-tests-and-editors">Projects, tests, and editors</a></h1>
 <h2 id="quetoml"><a class="header" href="#quetoml"><code>que.toml</code></a></h2>
@@ -2403,6 +2621,109 @@ runtime behavior is tested from the Rust workspace as well:</p>
 </code></pre>
 <p>For program-level checks, favor small <code>.que</code> test programs run under <code>--debug</code>
 and, for optimized code, compare the same expected result with <code>--opt</code>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="recipes"><a class="header" href="#recipes">Recipes</a></h1>
+<p>These are compact, complete patterns rather than isolated API calls. Copy one
+into a <code>.que</code> file, run it with <code>--debug</code>, and adapt it to your data.</p>
+<h2 id="parse-lines-and-aggregate-them"><a class="header" href="#parse-lines-and-aggregate-them">Parse lines and aggregate them</a></h2>
+<p><code>comp</code> makes a reusable parser when the input simply flows through each stage.
+The data-last collection API keeps each transformation readable:</p>
+<pre><code class="language-que">(let parse-and-sum
+  (comp
+    trim
+    split/lines
+    (map String-&gt;Integer)
+    sum))
+
+(parse-and-sum "10\n20\n12")
+; 42
+</code></pre>
+<p>For file input, put <code>read!</code> at the front and grant the read permission:</p>
+<pre><code class="language-que">(let sum-file
+  (comp
+    read!
+    trim
+    split/lines
+    (map String-&gt;Integer)
+    sum))
+
+(sum-file "numbers.txt")
+</code></pre>
+<pre><code class="language-sh">que sum-file.que --debug --allow read
+</code></pre>
+<h2 id="count-occurrences-with-a-table"><a class="header" href="#count-occurrences-with-a-table">Count occurrences with a Table</a></h2>
+<p>Use <code>Table/update-or!</code> for the common “insert an initial value or update the
+existing value” pattern. The guard gives a defined result if a count reaches
+the maximum <code>Int</code> value.</p>
+<pre><code class="language-que">(let frequency
+  (lambda (words)
+    (let counts (Table/new))
+    (loop/in word words
+      (Table/update-or! counts word
+        (lambda () 1)
+        (lambda (n)
+          (if (+/safe? n 1) (+ n 1) n))))
+    counts))
+
+(let counts (frequency ["tea" "coffee" "tea" "tea"]))
+(Table/get-unsafe "tea" counts)
+; 3
+</code></pre>
+<p>If the approximate number of distinct keys is known, create the table with
+<code>Table/new/capacity</code> instead. See <a href="#tables">Tables</a>.</p>
+<h2 id="model-a-closed-state-machine-with-enums"><a class="header" href="#model-a-closed-state-machine-with-enums">Model a closed state machine with enums</a></h2>
+<p>Enums prevent accidental use of arbitrary integers or strings as states.
+<code>=~</code> compares values of the same enum, while <code>match</code> makes rendering a state
+exhaustive:</p>
+<pre><code class="language-que">(enum Request Idle Loading Ready Failed)
+(enum Event Start Succeed Fail Reset)
+
+(let transition
+  (lambda (state event)
+    (cond
+      (=~ event Reset) Idle
+      (and (=~ state Idle) (=~ event Start)) Loading
+      (and (=~ state Loading) (=~ event Succeed)) Ready
+      (and (=~ state Loading) (=~ event Fail)) Failed
+      state)))
+
+(let describe
+  (lambda (state)
+    (match state
+      Idle "idle"
+      Loading "loading"
+      Ready "ready"
+      Failed "failed")))
+
+(describe (transition Idle Start))
+; "loading"
+</code></pre>
+<p>Adding a new <code>Request</code> variant makes each exhaustive <code>match</code> site a type error
+until it has a deliberate branch.</p>
+<h2 id="reuse-a-scratch-vector"><a class="header" href="#reuse-a-scratch-vector">Reuse a scratch vector</a></h2>
+<p>Reserve storage once, refill it, then keep the capacity for the next pass.
+This is useful in repeated simulations and parsers with a predictable maximum
+batch size:</p>
+<pre><code class="language-que">(let scratch [])
+(capacity! scratch 1000)
+
+(loop pass (&lt; pass 3)
+  (empty! scratch)
+  (loop i (&lt; i 1000)
+    (push! scratch (+ pass i)))
+  (length scratch))
+
+(length scratch)
+; 1000
+</code></pre>
+<p><code>empty!</code> changes the length, not the reserved backing capacity.</p>
+<h2 id="dynamic-programming-in-one-vector"><a class="header" href="#dynamic-programming-in-one-vector">Dynamic programming in one vector</a></h2>
+<p>Many dynamic-programming problems only require the prior row or column. Keep
+that state in one mutable vector rather than building a full matrix. The grid
+paths example counts right/down paths and demonstrates a proof-friendly indexed
+loop, <code>capacity!</code>, and a checked arithmetic update.</p>
+<p>See <a href="#grid-paths-mutable-dynamic-programming">Grid paths: mutable dynamic programming</a> for the complete
+program and an explanation of its invariants.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="grid-paths-mutable-dynamic-programming"><a class="header" href="#grid-paths-mutable-dynamic-programming">Grid paths: mutable dynamic programming</a></h1>
 <p>This program counts right/down paths through a square grid. It demonstrates a
