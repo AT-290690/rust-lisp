@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -224,7 +224,7 @@ reference cycle. This program is rejected at compile time:</p>
     (length callbacks)))
 
 ; Error: report-size captures callbacks, then is stored in callbacks.
-(push! callbacks report-size)
+(push! report-size callbacks)
 </code></pre>
 <img class="explanatory-diagram" src="../images/ownership-cycles.svg" alt="Rejected managed ownership cycle beside a valid graph represented by IDs">
 <p>The same protection applies to direct <code>set!</code> and recognised container
@@ -266,7 +266,7 @@ references are released; the vector’s backing allocation is retained for
 reuse. <code>capacity!</code> reserves backing storage and <code>compact!</code> rebuilds a vector
 with only the storage required by its current length:</p>
 <pre><code class="language-que">(let work [])
-(capacity! work 1000)
+(capacity! 1000 work)
 ; fill and process work
 (empty! work)       ; elements are released; reserved storage stays reusable
 (compact! work)     ; discard unused backing capacity

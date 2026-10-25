@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -226,10 +226,10 @@ or operation with different semantics may correctly prevent fusion.</p>
 <p>Vectors grow when necessary, but a vector that repeatedly grows must allocate
 and copy backing storage. Reserve once when the eventual append count is known:</p>
 <pre><code class="language-que">(let squares [])
-(capacity! squares 1000)
+(capacity! 1000 squares)
 
 (loop i (&lt; i 1000)
-  (push! squares (* i i)))
+  (push! (* i i) squares))
 </code></pre>
 <p><code>capacity!</code> is only a reservation: it does not set the length or impose a
 maximum. If the same scratch vector is refilled many times, <code>empty!</code> resets
@@ -241,14 +241,14 @@ This avoids repeated hash-table resizing; it does not change table semantics.</p
 both the access invariant and the intended work clear:</p>
 <pre><code class="language-que">(let total 0)
 (loop i (&lt; i (length xs))
-  (alter! total (+ total (get xs i))))
+  (alter! total (+ total (get i xs))))
 </code></pre>
 <p>Here the compiler can establish <code>0 &lt;= i &lt; length(xs)</code>. In optimized output it
 can use that proof to remove the corresponding bounds check. If an invariant
 comes from input validation or another source the analyser cannot see, state it
 as a guard rather than assuming <code>--opt</code> will discover it:</p>
 <pre><code class="language-que">(if (and (&gt;= index 0) (&lt; index (length xs)))
-    (get xs index)
+    (get index xs)
     fallback)
 </code></pre>
 <p>Likewise, use arithmetic safety predicates when a calculation reaches the

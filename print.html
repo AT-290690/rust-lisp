@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-2f0ff30a.js"></script>
+        <script src="toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -285,7 +285,7 @@ included Neovim integration also looks for <code>quelsp</code> on <code>PATH</co
 Wasmtime, Neovim, Telescope, Catppuccin, and the Calque setup—use:</p>
 <pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install-all-linux.sh | bash
 </code></pre>
-<p>See <a href="#projects-tests-and-editors">Projects, tests, and editors</a> for
+<p>See <a href="#projects-composition-tests-and-editors">Projects, tests, and editors</a> for
 Neovim commands, VS Code configuration, and project behavior.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="getting-started"><a class="header" href="#getting-started">Getting started</a></h1>
@@ -307,7 +307,9 @@ invariants:</p>
 <p><code>--debug</code> keeps runtime guards for checked integer arithmetic, division by
 zero, and vector access where appropriate, and reports static-analysis
 findings. <code>--opt</code> enables optimization and removes those optional runtime
-guards; it is not a substitute for establishing correctness.</p>
+guards; it is not a substitute for establishing correctness.
+See <a href="#debug-optimized-and-native-execution">Debug, optimized, and native execution</a> for
+the precise safety and deployment contract.</p>
 <h2 id="learn-from-the-installed-compiler"><a class="header" href="#learn-from-the-installed-compiler">Learn from the installed compiler</a></h2>
 <pre><code class="language-sh">que --help
 que --learn
@@ -331,7 +333,7 @@ QUE_TCO = "aggressive"
 <pre><code class="language-sh">que main.que --debug
 </code></pre>
 <p>Calque discovers the nearest <code>que.toml</code>, loads <code>deps</code> as definition bundles, and
-applies its <code>[env]</code> settings. See <a href="#projects-tests-and-editors">Projects, tests, and
+applies its <code>[env]</code> settings. See <a href="#projects-composition-tests-and-editors">Projects, tests, and
 editors</a> for the exact rules.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="language-tour"><a class="header" href="#language-tour">Language tour</a></h1>
@@ -381,13 +383,75 @@ argument can produce a closure instead of an immediate error.</p>
 <pre><code class="language-que">(let increment-all!
   (lambda (xs)
     (loop i (&lt; i (length xs))
-      (set! xs i (+ (get xs i) 1)))
+      (set! i (+ (get i xs) 1) xs))
     xs))
 
 (increment-all! [10 20 30])
 ; [11 21 31]
 </code></pre>
 <p>The following chapters spell out the rules behind these examples.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="build-a-file-report-program"><a class="header" href="#build-a-file-report-program">Build a file-report program</a></h1>
+<p>This short program reads a text file, parses one integer per non-empty line,
+and reports the count and sum. It demonstrates the normal Calque workflow:
+write direct code, run it safely, inspect facts, then use optimized execution.</p>
+<p>Create <code>numbers.txt</code>:</p>
+<pre><code class="language-text">12
+14
+1969
+100756
+</code></pre>
+<p>Then create <code>report.que</code>:</p>
+<pre><code class="language-que">; use-strict-warnings!
+
+(let parse
+  (comp
+    split/lines
+    (select (lambda (line) (&gt; (length line) 0)))
+    (map String-&gt;Integer)))
+
+(let report
+  (lambda (text)
+    (let values (parse text))
+    { (length values) (sum values) }))
+
+(let input (read! "numbers.txt"))
+(report input)
+</code></pre>
+<p>Run it during development with the smallest permission it needs:</p>
+<pre><code class="language-sh">que report.que --debug --allow read
+; {4 102751}
+</code></pre>
+<p>If the file is absent, <code>read!</code> reports an ordinary host error such as
+<code>read!: numbers.txt: file not found</code>; it is not a Calque safety trap.</p>
+<h2 id="read-what-the-compiler-knows"><a class="header" href="#read-what-the-compiler-knows">Read what the compiler knows</a></h2>
+<p>Ask for the optimized report before treating this as a hot path:</p>
+<pre><code class="language-sh">que explain report.que --opt
+</code></pre>
+<p>The report shows the final result type, effects (the <code>read!</code> is host I/O), and
+any bounds, arithmetic, or termination facts that were or were not proven. It
+is static information, not a timing measurement.</p>
+<h2 id="release-run"><a class="header" href="#release-run">Release run</a></h2>
+<p>Once representative inputs run cleanly in debug mode and the warnings have
+been addressed deliberately:</p>
+<pre><code class="language-sh">que report.que --opt --allow read
+</code></pre>
+<p>The pipeline is appropriate here because the transformation is a direct
+data-last sequence. For a tight indexed algorithm, use a mutable vector and a
+<code>loop</code> instead; see the <a href="#grid-paths-mutable-dynamic-programming">grid-paths example</a>.</p>
+<h2 id="extend-it"><a class="header" href="#extend-it">Extend it</a></h2>
+<p>The next natural changes each introduce one Calque feature rather than a new
+framework:</p>
+<ul>
+<li>return an enum such as <code>Empty</code> or <code>Numbers</code> when an empty file needs a
+distinct result;</li>
+<li>use a <code>Table</code> to report frequencies rather than one aggregate;</li>
+<li>add a <code>sig</code> when this becomes a public project boundary;</li>
+<li>put parsing helpers in <code>lib/parse.que</code>, list that file in <code>que.toml</code>, and
+keep <code>report.que</code> as the executable entry.</li>
+</ul>
+<p>The <a href="#projects-composition-tests-and-editors">projects chapter</a> explains that
+last step.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="types"><a class="header" href="#types">Types</a></h1>
 <p>Calque infers types with Hindley–Milner inference. Most bindings need no type
@@ -517,8 +581,8 @@ bindings—such as literals, names, and lambdas—but an allocating expression
 such as a vector is kept monomorphic for its binding. Its element type is
 still inferred; it is simply shared by every later mutation.</p>
 <pre><code class="language-que">(let xs [])
-(push! xs 1)       ; fixes xs as [Int]
-; (push! xs true)  ; type error
+(push! 1 xs)       ; fixes xs as [Int]
+; (push! true xs)  ; type error
 </code></pre>
 <p><code>mut</code> bindings are monomorphic by design and retain one type throughout their
 updates:</p>
@@ -582,7 +646,7 @@ rest ; [30 40]
 (let get-head (lambda ([x . xs]) x))
 </code></pre>
 <p>The names before <code>.</code> bind fixed positions. <code>rest</code> is the same tail window as
-<code>(cdr vector fixed-position-count)</code>: it begins after those positions without
+<code>(cdr fixed-position-count vector)</code>: it begins after those positions without
 initially copying the remaining values. It materializes independently if you
 mutate it. The rest pattern must be final and can bind one name only.</p>
 <h2 id="scope"><a class="header" href="#scope">Scope</a></h2>
@@ -709,9 +773,9 @@ when you need explicit sequencing without a new scope.</p>
 <h2 id="vectors"><a class="header" href="#vectors">Vectors</a></h2>
 <p>Vectors are homogeneous mutable collections written with square brackets:</p>
 <pre><code class="language-que">(let xs [10 20 30])
-(get xs 1)       ; 20
-(set! xs 1 99)
-(push! xs 40)
+(get 1 xs)       ; 20
+(set! 1 99 xs)
+(push! 40 xs)
 (pop! xs)
 </code></pre>
 <p>The basic operations are:</p>
@@ -722,14 +786,14 @@ when you need explicit sequencing without a new scope.</p>
 </thead>
 <tbody>
 <tr><td><code>(length xs)</code></td><td>number of elements</td></tr>
-<tr><td><code>(get xs i)</code></td><td>element at index <code>i</code></td></tr>
-<tr><td><code>(set! xs i value)</code></td><td>replace an existing element, or append at <code>length</code></td></tr>
-<tr><td><code>(push! xs value)</code></td><td>append</td></tr>
+<tr><td><code>(get i xs)</code></td><td>element at index <code>i</code></td></tr>
+<tr><td><code>(set! i value xs)</code></td><td>replace an existing element, or append at <code>length</code></td></tr>
+<tr><td><code>(push! value xs)</code></td><td>append</td></tr>
 <tr><td><code>(pop! xs)</code></td><td>remove the final element</td></tr>
 <tr><td><code>(pop-val! xs)</code></td><td>remove and return the final element</td></tr>
 <tr><td><code>(empty! xs)</code></td><td>set length to zero while retaining allocated capacity</td></tr>
-<tr><td><code>(car xs)</code></td><td>first element; equivalent to <code>(get xs 0)</code></td></tr>
-<tr><td><code>(cdr xs)</code>, <code>(cdr xs n)</code></td><td>tail window from offset <code>1</code> or explicit offset <code>n</code></td></tr>
+<tr><td><code>(car xs)</code></td><td>first element; equivalent to <code>(get 0 xs)</code></td></tr>
+<tr><td><code>(cdr xs)</code>, <code>(cdr n xs)</code></td><td>tail window from offset <code>1</code> or explicit offset <code>n</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -737,7 +801,7 @@ when you need explicit sequencing without a new scope.</p>
 Optimized code relies on the established invariant, so write an explicit guard
 or structure the loop so that the proof is obvious:</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))
-  (println! (get xs i)))
+  (println! (get i xs)))
 </code></pre>
 <p><code>cdr</code> initially shares the source vector’s backing storage and shifts the
 logical start index; it does not copy every tail. Mutating that result
@@ -758,7 +822,7 @@ names.</p>
 <h2 id="strings-and-characters"><a class="header" href="#strings-and-characters">Strings and characters</a></h2>
 <p>Strings are sequences of <code>Char</code> values, so their language type is <code>[Char]</code>:</p>
 <pre><code class="language-que">(let title "Calque")
-(get title 0)      ; 'Q'
+(get 0 title)      ; 'Q'
 (length title)     ; 3
 (cons "Hello, " title)
 </code></pre>
@@ -836,24 +900,24 @@ local counters, in-place algorithms, and predictable allocation behavior.</p>
   (+= total i))
 
 (let xs [])
-(push! xs total)
-(set! xs 0 42)
+(push! total xs)
+(set! 0 42 xs)
 </code></pre>
-<p>The caller-visible mutable value of a function is normally rooted in its first
-parameter. This keeps mutation APIs regular:</p>
+<p>The caller-visible mutable value of a function is normally its final
+parameter. This keeps mutation APIs pipeline-friendly:</p>
 <pre><code class="language-que">(let fill-zeroes!
   (lambda (xs)
     (loop i (&lt; i (length xs))
-      (set! xs i 0))
+      (set! i 0 xs))
     xs))
 </code></pre>
 <h2 id="reserving-vector-storage"><a class="header" href="#reserving-vector-storage">Reserving vector storage</a></h2>
 <p><code>capacity!</code> reserves backing storage without changing a vector’s length:</p>
 <pre><code class="language-que">(let paths [])
-(capacity! paths 1000)
+(capacity! 1000 paths)
 
 (loop i (&lt; i 1000)
-  (push! paths i))
+  (push! i paths))
 </code></pre>
 <p>It is useful before a known burst of appends. It returns unit, deliberately:
 the vector itself remains the same mutable value. <code>empty!</code> similarly resets
@@ -912,7 +976,7 @@ reference cycle. This program is rejected at compile time:</p>
     (length callbacks)))
 
 ; Error: report-size captures callbacks, then is stored in callbacks.
-(push! callbacks report-size)
+(push! report-size callbacks)
 </code></pre>
 <img class="explanatory-diagram" src="images/ownership-cycles.svg" alt="Rejected managed ownership cycle beside a valid graph represented by IDs">
 <p>The same protection applies to direct <code>set!</code> and recognised container
@@ -954,7 +1018,7 @@ references are released; the vector’s backing allocation is retained for
 reuse. <code>capacity!</code> reserves backing storage and <code>compact!</code> rebuilds a vector
 with only the storage required by its current length:</p>
 <pre><code class="language-que">(let work [])
-(capacity! work 1000)
+(capacity! 1000 work)
 ; fill and process work
 (empty! work)       ; elements are released; reserved storage stays reusable
 (compact! work)     ; discard unused backing capacity
@@ -1022,10 +1086,10 @@ or operation with different semantics may correctly prevent fusion.</p>
 <p>Vectors grow when necessary, but a vector that repeatedly grows must allocate
 and copy backing storage. Reserve once when the eventual append count is known:</p>
 <pre><code class="language-que">(let squares [])
-(capacity! squares 1000)
+(capacity! 1000 squares)
 
 (loop i (&lt; i 1000)
-  (push! squares (* i i)))
+  (push! (* i i) squares))
 </code></pre>
 <p><code>capacity!</code> is only a reservation: it does not set the length or impose a
 maximum. If the same scratch vector is refilled many times, <code>empty!</code> resets
@@ -1037,14 +1101,14 @@ This avoids repeated hash-table resizing; it does not change table semantics.</p
 both the access invariant and the intended work clear:</p>
 <pre><code class="language-que">(let total 0)
 (loop i (&lt; i (length xs))
-  (alter! total (+ total (get xs i))))
+  (alter! total (+ total (get i xs))))
 </code></pre>
 <p>Here the compiler can establish <code>0 &lt;= i &lt; length(xs)</code>. In optimized output it
 can use that proof to remove the corresponding bounds check. If an invariant
 comes from input validation or another source the analyser cannot see, state it
 as a guard rather than assuming <code>--opt</code> will discover it:</p>
 <pre><code class="language-que">(if (and (&gt;= index 0) (&lt; index (length xs)))
-    (get xs index)
+    (get index xs)
     fallback)
 </code></pre>
 <p>Likewise, use arithmetic safety predicates when a calculation reaches the
@@ -1236,7 +1300,7 @@ evaluates its input once, then reads its final element:</p>
       (qq
         (block
           (let (uq values) (uq xs))
-          (get (uq values) (- (length (uq values)) 1)))))))
+          (get (- (length (uq values)) 1) (uq values)))))))
 
 (last-item [10 20 30])
 ; 30
@@ -1306,6 +1370,8 @@ conservative warnings about runtime properties that types alone cannot prove.</p
 <p>Enable strict warnings in a source file:</p>
 <pre><code class="language-que">; use-strict-warnings!
 </code></pre>
+<p>For a compact message-to-fix table, see <a href="#warnings-and-proof-recipes">Warnings and proof
+recipes</a>.</p>
 <p>Or inspect a full report:</p>
 <pre><code class="language-sh">que explain program.que --opt
 que explain program.que --opt --json
@@ -1339,7 +1405,7 @@ que explain program.que --opt --json --out explain.json
 <p>For a safe counted access, the useful part looks conceptually like this:</p>
 <pre><code class="language-text">Correctness:
   Proven bounds:
-    (get xs i) proven safe
+    (get i xs) proven safe
       0 &lt;= i &lt;= 9
 
 Termination:
@@ -1372,11 +1438,11 @@ P                         path facts, aliases, and recognised guard summaries
 <p>For example, on the true path of this condition the analyser refines the
 abstract state to include both facts needed by <code>get</code>:</p>
 <pre><code class="language-que">(if (and (&gt;= i 0) (&lt; i (length xs)))
-    (get xs i)
+    (get i xs)
     fallback)
 </code></pre>
 <pre><code class="language-text">true path:  0 &lt;= i &lt; length(xs)
-therefore:  (get xs i) is proven safe
+therefore:  (get i xs) is proven safe
 </code></pre>
 <p>It keeps bounded alternatives when useful—for example, a value known to be
 negative <em>or</em> positive rather than merely “some <code>Int</code>”—and tracks simple
@@ -1393,7 +1459,7 @@ stops gaining useful facts. Widening deliberately broadens a changing range
 when necessary so this process always finishes. That is why Calque can prove
 common counted loops without attempting to solve the halting problem.</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))
-  (get xs i))
+  (get i xs))
 </code></pre>
 <p>The loop supplies an initial value, condition, and update. The analysis derives
 <code>0 &lt;= i &lt; length(xs)</code> for the body, proves the read safe, and can record the
@@ -1434,7 +1500,7 @@ fact may have been invalidated, it stops relying on it.</p>
 <h2 id="bounds-and-empty-vectors"><a class="header" href="#bounds-and-empty-vectors">Bounds and empty vectors</a></h2>
 <p>The analyser recognizes common loop shapes:</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))
-  (get xs i))
+  (get i xs))
 </code></pre>
 <p>Here it can establish <code>0 &lt;= i &lt; length(xs)</code>. If it cannot prove an access, it
 reports the source expression and suggests a guard such as:</p>
@@ -1467,6 +1533,70 @@ That result is intentionally conservative, not a claim of non-termination.</p>
 <p>Avoid writing a “fake” base case that does not actually guard the recursive
 call; the analyser follows control flow rather than just looking for a test.</p>
 <div style="break-before: page; page-break-before: always;"></div>
+<h1 id="warnings-and-proof-recipes"><a class="header" href="#warnings-and-proof-recipes">Warnings and proof recipes</a></h1>
+<p>Warnings are conservative: they mean Calque could not prove a required fact
+from the source it can see. They are neither ignored type errors nor proof that
+the program fails. Start with <code>--debug</code> and inspect the full explanation when
+needed:</p>
+<pre><code class="language-sh">que program.que --debug
+que explain program.que --opt
+</code></pre>
+<p>Put <code>; use-strict-warnings!</code> at the top of a source file to surface these
+findings in editor diagnostics.</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Finding</th><th>Meaning</th><th>Usual source-level proof or fix</th></tr>
+</thead>
+<tbody>
+<tr><td><code>index not proven safe</code></td><td>An index may be negative or beyond vector length.</td><td>Guard with <code>in-bounds?</code>, or use a counted loop whose condition includes <code>(length xs)</code>.</td></tr>
+<tr><td><code>vector may be empty</code></td><td><code>car</code>, <code>pop-val!</code>, or a similar operation may see no elements.</td><td>Check <code>(&gt; (length xs) 0)</code>, use a safe library variant, or restructure the branch.</td></tr>
+<tr><td><code>Int overflow/underflow possible</code></td><td>Signed <code>i32</code> arithmetic is not proven in range.</td><td>Use <code>+/safe?</code>, <code>-/safe?</code>, or <code>*/safe?</code> with a value-producing <code>if</code>; constrain the range.</td></tr>
+<tr><td><code>division by zero possible</code></td><td>A divisor may be zero.</td><td>Guard the divisor before <code>/</code> or <code>%</code>.</td></tr>
+<tr><td><code>termination: unknown</code></td><td>The analyser did not infer a decreasing measure.</td><td>Make the base-case guard control the recursive call; use an explicit counter loop when that is clearer.</td></tr>
+<tr><td><code>unknown-call</code></td><td>A function value is called indirectly and its behavior cannot be resolved.</td><td>It is valid code. Prefer a known direct helper only when that genuinely improves clarity or hot-path optimization.</td></tr>
+<tr><td>RC cycle rejection</td><td>A managed collection would own a closure that captures the same collection.</td><td>Store IDs/indexes instead of owning back-edges; see <a href="#memory-management-and-ownership">memory</a>.</td></tr>
+<tr><td>permission error</td><td>A host operation lacks an allowed WASI capability.</td><td>Grant the narrow matching <code>--allow</code> group, for example <code>--allow read</code>.</td></tr>
+</tbody>
+</table>
+</div>
+<h2 id="bounds"><a class="header" href="#bounds">Bounds</a></h2>
+<p>The canonical dynamic guard is:</p>
+<pre><code class="language-que">(if (and (&gt;= index 0) (&lt; index (length xs)))
+    (get index xs)
+    fallback)
+</code></pre>
+<p>For loops, keep the relationship visible rather than calculating an unrelated
+upper bound elsewhere:</p>
+<pre><code class="language-que">(loop i (&lt; i (length xs))
+  (get i xs))
+</code></pre>
+<h2 id="arithmetic-1"><a class="header" href="#arithmetic-1">Arithmetic</a></h2>
+<p>Safety predicates prove the corresponding operation only in their true path.
+Use <code>if</code> or <code>cond</code> when the expression must produce a value:</p>
+<pre><code class="language-que">(if (+/safe? left right)
+    (+ left right)
+    fallback)
+</code></pre>
+<p>Use <code>when</code> only for a body whose result is <code>nil</code>, such as a mutation:</p>
+<pre><code class="language-que">(when (+/safe? total amount)
+  (alter! total (+ total amount)))
+</code></pre>
+<h2 id="termination-1"><a class="header" href="#termination-1">Termination</a></h2>
+<p>Calque understands conventional counted loops and some recursive measures. A
+base case must dominate the recursive call; merely placing an unrelated test
+earlier in the function does not establish termination.</p>
+<pre><code class="language-que">(letrec count-down
+  (lambda (n)
+    (if (&lt;= n 0)
+        0
+        (count-down (- n 1)))))
+</code></pre>
+<p>An unknown termination result is not a rejection. It means the analysis chose
+not to make a proof claim. The full <a href="#correctness-analysis">correctness-analysis
+chapter</a> describes the model and <code>que explain</code>
+output.</p>
+<div style="break-before: page; page-break-before: always;"></div>
 <h1 id="effects-and-permissions"><a class="header" href="#effects-and-permissions">Effects and permissions</a></h1>
 <p>Pure computation is available without runtime permissions. Host operations are
 explicit functions and must be granted capabilities when running under the
@@ -1476,6 +1606,70 @@ external WASI host.</p>
 </code></pre>
 <pre><code class="language-sh">que program.que --allow read print
 </code></pre>
+<h2 id="what-calque-tracks"><a class="header" href="#what-calque-tracks">What Calque tracks</a></h2>
+<p>Effects are compiler metadata inferred from the implementation of an
+expression. They are useful for diagnostics, permission reporting, ownership
+reasoning, and optimization. They are <strong>not</strong> part of a function’s written
+type: <code>Int -&gt; Int</code> does not say whether a function mutates or performs I/O.</p>
+<p><code>que explain</code> and editor hovers can report one or more of these labels:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Label</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>pure</code></td><td>No known mutation, host I/O, or unresolved call.</td></tr>
+<tr><td><code>mutate</code></td><td>Performs a mutation which the compiler can identify.</td></tr>
+<tr><td><code>io</code></td><td>Calls a host operation or <code>extern</code>; it may require a permission.</td></tr>
+<tr><td><code>unknown-call</code></td><td>Calls a function whose implementation is not statically known at this call site.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The labels combine. For example, a function may be both <code>mutate</code> and <code>io</code>.
+<code>pure</code> is used only when none of the other labels apply.</p>
+<h3 id="unknown-call-is-conservative-not-an-error"><a class="header" href="#unknown-call-is-conservative-not-an-error"><code>unknown-call</code> is conservative, not an error</a></h3>
+<p>Higher-order code often accepts a callback. The callback may be pure, mutate
+its argument, or call the host, but that information is not contained in its
+ordinary function type:</p>
+<pre><code class="language-que">(let apply-twice
+  (lambda (f x)
+    (f (f x))))
+</code></pre>
+<p><code>apply-twice</code> is therefore reported with <code>unknown-call</code>: the parameter <code>f</code>
+could refer to any compatible function. This does <strong>not</strong> mean the program is
+invalid, that it necessarily performs I/O, or that permission was denied. It
+means the compiler cannot make a stronger claim from the source it sees.</p>
+<p>By contrast, a direct call to a locally known implementation can be
+summarised precisely:</p>
+<pre><code class="language-que">(let plus-one (lambda x (+ x 1)))
+(let answer (plus-one 41))
+; `plus-one` and this call are pure.
+</code></pre>
+<p>The analyser also resolves many direct <code>letrec</code> calls. A function passed
+through a parameter, stored behind an unknown value, or invoked indirectly may
+remain <code>unknown-call</code> even when you know it is harmless at runtime.</p>
+<p>This conservatism protects correctness and ownership: around an unknown call,
+the optimizer does not assume that a mutable argument is unchanged, and avoids
+transformations that would reorder, duplicate, or discard the call. It can
+also prevent inlining, loop unrolling, and other optimizations that require a
+known effect. Make the callee direct, or keep the callback boundary explicit,
+when the distinction matters for performance.</p>
+<p>Use <code>que explain</code> to inspect the inferred result for a program:</p>
+<pre><code class="language-sh">que explain program.que --opt
+</code></pre>
+<p>The <strong>Effects and permissions</strong> section gives the combined program effect;
+the <strong>Generated code</strong> section lists effects for individual compiled
+functions. In the editor, hover over a binding to see its inferred effect.</p>
+<h3 id="effects-names-and-permissions"><a class="header" href="#effects-names-and-permissions">Effects, names, and permissions</a></h3>
+<p><code>!</code> is a useful naming convention for operations which mutate or interact with
+the outside world, but it is not a permission grant and does not by itself
+determine an effect. An <code>extern</code> declaration is always treated as host I/O,
+and the external runner enforces its matching <code>--allow</code> capability. Local
+functions infer their effects from their bodies.</p>
+<p>Effects are informative rather than an effect-row type system: there is no
+syntax for declaring “this function is pure,” and <code>sig</code> checks value types,
+not effects. Runtime permissions remain the authority for built-in host
+operations.</p>
 <h2 id="permission-groups"><a class="header" href="#permission-groups">Permission groups</a></h2>
 <div class="table-wrapper">
 <table>
@@ -1556,6 +1750,62 @@ compiler. It is deliberately separate from the main <code>que</code> command:</p
 <p>This is useful for completed compute-heavy programs and native benchmarking.
 It is not a different source language: static typing, macro expansion, and
 Wasm generation occur first in the same compiler.</p>
+<p>For the debug/optimized safety boundary and a release checklist, see <a href="#debug-optimized-and-native-execution">Debug,
+optimized, and native execution</a>.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="debug-optimized-and-native-execution"><a class="header" href="#debug-optimized-and-native-execution">Debug, optimized, and native execution</a></h1>
+<p>Calque has one source language and one type checker. The execution mode changes
+which runtime guards remain in generated code and which runtime executes the
+result; it does not loosen type checking, make reference cycles valid, or turn
+warnings into type errors.</p>
+<h2 id="development---debug"><a class="header" href="#development---debug">Development: <code>--debug</code></a></h2>
+<p>Use debug mode while writing and testing a program:</p>
+<pre><code class="language-sh">que program.que --debug --allow read print
+</code></pre>
+<p>It emits static-analysis findings and keeps configured runtime checks for facts
+the compiler could not prove, including vector bounds, integer arithmetic, and
+division by zero. A debug trap is evidence that an execution violated a Calque
+invariant. Fix the input validation or source invariant rather than treating a
+trap as an expected control-flow mechanism.</p>
+<h2 id="release---opt"><a class="header" href="#release---opt">Release: <code>--opt</code></a></h2>
+<p>Use optimized mode only after exercising the program in debug mode and reading
+relevant warnings:</p>
+<pre><code class="language-sh">que explain program.que --opt
+que program.que --opt --allow read
+</code></pre>
+<p><code>--opt</code> enables source and Wasm optimizations and omits optional Calque runtime
+guards. It uses static proofs when available, but it also assumes that source
+invariants you chose not to guard are true. For example, an unguarded dynamic
+<code>get</code> can be unchecked in optimized code.</p>
+<p>WebAssembly still bounds every access to its linear memory. An access outside
+linear memory traps and cannot escape the guest sandbox. That is not the same
+as a valid vector access: an incorrect unchecked index that remains inside
+linear memory can read or overwrite unrelated Calque runtime data. The result
+may be wrong or may later fail due to corrupted Calque-level state. Treat
+<code>--opt</code> as release performance mode, not as permission to ignore correctness.</p>
+<h2 id="native-c-path"><a class="header" href="#native-c-path">Native C path</a></h2>
+<p>The repository’s optional native path first compiles the same typed Calque
+program to Wasm, then translates that Wasm through <code>wasm2c</code> and a C compiler:</p>
+<pre><code class="language-sh">./scripts/compile-native-c.sh program.que
+</code></pre>
+<p>It is useful for finished compute-heavy programs, low RSS, and native
+benchmarking. It is not a separate compiler, a different ownership model, or a
+replacement for debug validation. Compare its output with both debug and
+optimized WASI runs before relying on it for a workload.</p>
+<h2 id="recommended-release-checklist"><a class="header" href="#recommended-release-checklist">Recommended release checklist</a></h2>
+<ol>
+<li>Run representative inputs with <code>--debug</code>.</li>
+<li>Address warnings, or make the invariant visible with a guard.</li>
+<li>Inspect <code>que explain program.que --opt</code> for hot-path bounds checks,
+allocations, and unknown calls.</li>
+<li>Compare debug and optimized output on representative inputs.</li>
+<li>Measure complete optimized runs; compare the native path only when it is a
+realistic deployment option.</li>
+<li>Pin the Calque version used for a long-lived project or reproducible build.</li>
+</ol>
+<p>If debug, optimized, or native output differs for the same valid input, reduce
+the program and report it as a compiler bug. See the <a href="#debugging-cookbook">debugging
+cookbook</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="cli"><a class="header" href="#cli">CLI</a></h1>
 <p>Run <code>que --help</code> for the installed command overview. The important commands
@@ -1640,6 +1890,11 @@ the contract and makes an accidental specialization easier to find:</p>
 </code></pre>
 <p>Check destructuring too: <code>[head . tail]</code> needs a non-empty vector, while
 <code>{left right}</code> expects a two-field tuple.</p>
+<p>The compiler and both language servers collect independent top-level type
+errors together. During diagnostic recovery only, a failed declaration gets an
+internal unknown placeholder so later forms can still be checked; it never
+makes the program valid or compilable. This avoids distracting “undefined
+variable” cascades while still finding other errors in those later forms.</p>
 <h2 id="a-bounds-empty-vector-or-arithmetic-warning"><a class="header" href="#a-bounds-empty-vector-or-arithmetic-warning">A bounds, empty-vector, or arithmetic warning</a></h2>
 <p>Warnings mean the analyser could not prove the required fact. They are not all
 runtime failures, but they deserve an explicit decision. Run the full report:</p>
@@ -1647,7 +1902,7 @@ runtime failures, but they deserve an explicit decision. Run the full report:</p
 </code></pre>
 <p>Make the condition visible at the use site:</p>
 <pre><code class="language-que">(if (and (&gt;= index 0) (&lt; index (length xs)))
-    (get xs index)
+    (get index xs)
     fallback)
 </code></pre>
 <p>For arithmetic, make both outcomes value-producing with <code>if</code> or <code>cond</code>:</p>
@@ -1705,7 +1960,7 @@ the language server is appropriate after installing a new release. If the
 command-line and editor diagnostics disagree on saved source, keep the source
 and both messages as a language-server bug report.</p>
 <div style="break-before: page; page-break-before: always;"></div>
-<h1 id="projects-tests-and-editors"><a class="header" href="#projects-tests-and-editors">Projects, tests, and editors</a></h1>
+<h1 id="projects-composition-tests-and-editors"><a class="header" href="#projects-composition-tests-and-editors">Projects, composition, tests, and editors</a></h1>
 <h2 id="quetoml"><a class="header" href="#quetoml"><code>que.toml</code></a></h2>
 <p>When compiling a <code>.que</code> file, Calque searches upward from that file for a
 <code>que.toml</code>. The configuration can provide source bundles and environment
@@ -1731,15 +1986,55 @@ definitions with the standard library and the compiled source file.</p>
 <p>The <code>entry</code> field records the intended entrypoint for tooling and project
 conventions; compilation is driven by the source file passed to the current
 CLI command.</p>
-<h2 id="tests"><a class="header" href="#tests">Tests</a></h2>
-<p>Calque code is ordinary source, so a small test file can call project definitions
-and end by returning or printing a useful value. The bundled <code>test</code> macro is
-also available for assertion-shaped values. Run test sources with the same
-debug or optimized workflow you use for programs:</p>
+<h2 id="composition-not-modules"><a class="header" href="#composition-not-modules">Composition, not modules</a></h2>
+<p>Today Calque projects use <strong>ordered source composition</strong>, not an import/module
+system or package registry. A dependency bundle contributes its top-level
+names to the program that is compiled. This has useful consequences:</p>
+<ul>
+<li>dependencies are ordinary <code>.que</code> source, versioned with the project;</li>
+<li>definitions must appear before uses, so dependency order in <code>deps</code> matters;</li>
+<li>a dependency cannot perform top-level I/O or other run-time work;</li>
+<li>duplicate top-level names are an error rather than an override mechanism;</li>
+<li>recursive calls use <code>letrec</code> inside one definition; mutually recursive
+top-level bundles are not currently a project feature.</li>
+</ul>
+<p>A small project can therefore use a simple layout:</p>
+<pre><code class="language-text">report/
+  que.toml
+  lib/parse.que
+  lib/stats.que
+  main.que
+  tests/report.test.que
+</code></pre>
+<p>Keep reusable <code>let</code>/<code>letrec</code> definitions in <code>lib/*.que</code>, list them in
+dependency order in <code>que.toml</code>, and keep execution and host I/O in <code>main.que</code>.
+This is deliberately explicit until Calque grows a real module/package model.</p>
+<h2 id="tests-and-ci"><a class="header" href="#tests-and-ci">Tests and CI</a></h2>
+<p>Calque test files are ordinary source. A useful small test file returns data
+that a shell runner, CI job, or person can inspect:</p>
+<pre><code class="language-que">; tests/math.test.que
+(let square (lambda (n) (* n n)))
+
+[(test "square of zero" (= (square 0) 0))
+ (test "square of nine" (= (square 9) 81))]
+; [{"square of zero" true} {"square of nine" true}]
+</code></pre>
+<p><code>test</code> is intentionally a tiny macro that creates <code>{name outcome}</code> data. It
+does not provide a hidden test runner or magical assertion behavior. Run test
+sources in debug mode first:</p>
 <pre><code class="language-sh">que tests/math.test.que --debug
 </code></pre>
-<p>Compiler regression tests live in the Rust workspace; run them from a checkout
-with <code>cargo test</code>.</p>
+<p>For a project, make CI run formatting, debug tests, optimized tests where
+relevant, and the compiler’s own Rust suite from a checkout:</p>
+<pre><code class="language-sh">que fmt main.que --check
+que tests/math.test.que --debug
+que tests/math.test.que --opt
+cargo test
+</code></pre>
+<p>Use a real assertion runner around the printed result if a nonzero process exit
+on <code>false</code> is required today. A debug/optimized or WASI/native output mismatch
+for the same valid test input is a compiler bug; preserve the smallest
+reproducer and the commands used. See the <a href="#debugging-cookbook">debugging cookbook</a>.</p>
 <h2 id="formatter"><a class="header" href="#formatter">Formatter</a></h2>
 <pre><code class="language-sh">que fmt program.que
 que fmt program.que --check
@@ -1913,6 +2208,21 @@ expected result with <code>sig</code> before the binding:</p>
 <p>Enums serialize by their declared variant name and are checked against the
 expected enum on decode. See <a href="#enum-keyed-table-round-trip">Enum-keyed table round trip</a>
 for a table example.</p>
+<h3 id="compatibility-and-persistence"><a class="header" href="#compatibility-and-persistence">Compatibility and persistence</a></h3>
+<p><code>serialize</code> is designed for Calque-to-Calque data within a compatible compiler
+release. It is <strong>not yet a versioned, stable public storage or network format</strong>.
+Do not make a database schema, long-lived cache, or external API depend on its
+exact textual spelling without pinning the Calque compiler version and testing
+the decoder during upgrades.</p>
+<p>For persistent application data today, store an explicit version field next to
+the serialized value and own the migration in source:</p>
+<pre><code class="language-que">(let saved {1 (serialize value)})
+; On read, inspect the version before choosing the expected decoder and migration.
+</code></pre>
+<p>Serialization needs a concrete, fully known value type. It cannot serialize an
+unresolved generic or a function/closure, and <code>deserialize</code> needs an expected
+type through its binding, <code>sig</code>, or surrounding context. Malformed input or a
+type mismatch is a decoding failure, not an implicit conversion.</p>
 <p>Run a program using an operation only after granting the matching capability:</p>
 <pre><code class="language-sh">que program.que --allow read write print
 </code></pre>
@@ -2001,8 +2311,8 @@ public library families.</p>
 <p>This is the practical first stop for the bundled library: short examples of
 the functions you will use in normal programs. The <a href="#complete-library-index">complete library
 index</a> covers every exported family, including low-level helpers.</p>
-<p>Functions that transform a collection usually take that collection last, so
-they compose naturally with <code>|&gt;</code>. Operations ending in <code>!</code> mutate the first
+<p>Functions that transform a collection take that collection last, so they
+compose naturally with <code>|&gt;</code>. Operations ending in <code>!</code> mutate their final
 collection argument and normally return <code>nil</code>.</p>
 <pre><code class="language-que">(|&gt; [1 2 3 4]
     (map (lambda (x) (* x x)))
@@ -2016,27 +2326,27 @@ same basic read operations work on both.</p>
 <pre><code class="language-que">(let xs [10 20 30])
 
 (length xs)             ; 3
-(get xs 1)              ; 20
+(get 1 xs)              ; 20
 (car xs)                ; 10 — first element
 (cdr xs)                ; [20 30] — tail from offset 1
-(cdr xs 2)              ; [30] — tail from an explicit offset
+(cdr 2 xs)              ; [30] — tail from an explicit offset
 (first xs)              ; 10
 (last xs)               ; 30
-(at xs -1)              ; 30 — negative indexing helper
+(at -1 xs)              ; 30 — negative indexing helper
 (cons [0] xs)           ; [0 10 20 30] — concatenate two vectors
 </code></pre>
 <h3 id="car-cdr-and-tail-windows"><a class="header" href="#car-cdr-and-tail-windows"><code>car</code>, <code>cdr</code>, and tail windows</a></h3>
 <p><code>car</code> reads the first element: it is the head-oriented spelling of
-<code>(get xs 0)</code>. <code>cdr</code> creates a <strong>tail window</strong>. <code>(cdr xs)</code> starts at offset
-<code>1</code>; <code>(cdr xs n)</code> starts at offset <code>n</code>. The window has its own logical index
+<code>(get 0 xs)</code>. <code>cdr</code> creates a <strong>tail window</strong>. <code>(cdr xs)</code> starts at offset
+<code>1</code>; <code>(cdr n xs)</code> starts at offset <code>n</code>. The window has its own logical index
 zero, so it is useful for head-and-tail recursion without copying every tail.</p>
 <pre><code class="language-que">(let xs [10 20 30 40])
-(let tail (cdr xs 2))
+(let tail (cdr 2 xs))
 
-(get tail 0)            ; 30
+(get 0 tail)            ; 30
 (length tail)           ; 2
 
-(set! tail 0 99)
+(set! 0 99 tail)
 {xs tail}
 ; { [10 20 30 40] [99 40] }
 </code></pre>
@@ -2050,16 +2360,16 @@ representation.</p>
 input. For a dynamic index, use <code>in-bounds?</code>, <code>Vector/get*</code>, or structure the
 loop so the analyser can prove the access.</p>
 <pre><code class="language-que">(if (in-bounds? xs index)
-    (get xs index)
+    (get index xs)
     fallback)
 
 (let {found? values} (Vector/get* index xs))
-(if found? (get values 0) fallback)
+(if found? (get 0 values) fallback)
 </code></pre>
 <p>Mutation is direct and explicit:</p>
 <pre><code class="language-que">(let xs [10 20])
-(set! xs 0 99)          ; [99 20]
-(push! xs 30)           ; append, xs is now [99 20 30]
+(set! 0 99 xs)          ; [99 20]
+(push! 30 xs)           ; append, xs is now [99 20 30]
 (let last-value (pop-val! xs))
 (pop! xs)               ; remove the last value and return nil
 (empty! xs)             ; length becomes zero; allocation remains available
@@ -2068,8 +2378,8 @@ loop so the analyser can prove the access.</p>
 effect-only. <code>capacity</code> is the non-mutating version: it copies first, reserves
 the copy, and returns it. <code>compact!</code> discards unused vector capacity.</p>
 <pre><code class="language-que">(let out [])
-(capacity! out 1000)
-(loop i (&lt; i 1000) (push! out i))
+(capacity! 1000 out)
+(loop i (&lt; i 1000) (push! i out))
 
 (let copy-with-room (capacity 1000 out))
 (compact! out)
@@ -2137,7 +2447,7 @@ and its alias <code>select</code> retain matching values; <code>exclude</code> r
 returns the original vector, which is useful in a pipeline. Their <code>/i</code> forms
 also receive an index.</p>
 <pre><code class="language-que">(let seen [])
-(for (lambda (x) (push! seen x)) [1 2 3])
+(for (lambda (x) (push! x seen)) [1 2 3])
 ; seen is [1 2 3]
 
 (|&gt; [1 2 3]
@@ -2197,12 +2507,18 @@ element types. <code>group</code> builds a table keyed by a function result:</p>
 <p>Strings have type <code>[Char]</code>. <code>split</code> takes the separator first and text last;
 <code>join</code> takes the separator first and a vector of strings last.</p>
 <pre><code class="language-que">(split "," "red,green,blue")             ; ["red" "green" "blue"]
-(split/lines "one\ntwo")                  ; ["one" "two"]
-(split/words "one two")                   ; ["one" "two"]
+(split/lines "one\n\ntwo")                ; ["one" "" "two"]
+(split/spaces "one  two")                 ; ["one" "" "two"]
+(split/words "  one\ttwo\nthree  ")       ; ["one" "two" "three"]
 (join "/" ["usr" "local" "bin"])        ; "usr/local/bin"
 (trim "  Calque  ")                       ; "Calque"
 (slice 1 4 "Calque")                      ; "alq"
 </code></pre>
+<p><code>split</code> and <code>split/spaces</code> are raw delimiter splits: repeated, leading, and
+trailing delimiters produce empty fields. <code>split/lines</code> follows that rule so
+blank lines remain available as structure in an input. <code>split/words</code> is the
+tokenizing variant: it splits on spaces, tabs, carriage returns, and newlines,
+and drops empty fields.</p>
 <p>Use <code>lower</code>, <code>upper</code>, <code>digit?</code>, <code>space?</code>, and the <code>String/*</code> predicates for
 text logic:</p>
 <pre><code class="language-que">(lower 'Q')                               ; 'q'
@@ -2280,7 +2596,7 @@ new tables. <code>Table/count</code> and <code>Table/frequency</code> build coun
 (Heap/push! heap 4 before?)
 (Heap/push! heap 1 before?)
 (Heap/peek! heap)                         ; 1
-(Heap/pop! heap before?)
+(Heap/pop! before? heap)
 </code></pre>
 <p><code>Que/new</code> creates a deque with a default value. Use <code>Que/append!</code>/<code>Que/push!</code>
 and <code>Que/prepend!</code> to add at either end; <code>Que/pop!</code> and <code>Que/tail!</code> remove;
@@ -2340,7 +2656,7 @@ example</a> shows each of these patterns in runnable code.</p>
 <tr><td>Combine or inspect values</td><td><code>reduce</code>, <code>sum</code>, <code>product</code>, <code>count</code>, <code>find</code>, <code>some?</code>, <code>every?</code>, <code>minimum</code>, <code>maximum</code></td></tr>
 <tr><td>Reshape a vector</td><td><code>reverse</code>, <code>flat</code>, <code>zip</code>, <code>unzip</code>, <code>slice</code>, <code>take/first</code>, <code>drop/first</code>, <code>partition</code></td></tr>
 <tr><td>Order or classify values</td><td><code>sort</code>, <code>group</code>, <code>unique/int</code>, <code>unique/char</code></td></tr>
-<tr><td>Parse or assemble text</td><td><code>split</code>, <code>split/lines</code>, <code>split/words</code>, <code>trim</code>, <code>join</code>, <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code></td></tr>
+<tr><td>Parse or assemble text</td><td><code>split</code>, <code>split/lines</code>, <code>split/spaces</code>, <code>split/words</code>, <code>trim</code>, <code>join</code>, <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code></td></tr>
 <tr><td>Use key-value data</td><td><code>Table/new</code>, <code>Table/set!</code>, <code>Table/get</code>, <code>Table/has?</code>, <code>Table/entries</code>, <code>Table/update-or!</code>, <code>Table/count</code></td></tr>
 <tr><td>Work directly with a vector</td><td><code>length</code>, <code>get</code>, <code>set!</code>, <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>in-bounds?</code></td></tr>
 </tbody>
@@ -2398,7 +2714,7 @@ such as <code>++</code> and <code>+=</code>, and compile-time helpers such as <c
 prefer the non-raw name unless you are extending the library itself.</p>
 <h2 id="text-numbers-and-conversion"><a class="header" href="#text-numbers-and-conversion">Text, numbers, and conversion</a></h2>
 <ul>
-<li>Text: <code>split</code>, <code>split/lines</code>, <code>split/words</code>, <code>split/commas</code>, <code>join</code>,
+<li>Text: <code>split</code>, <code>split/lines</code>, <code>split/spaces</code>, <code>split/words</code>, <code>split/commas</code>, <code>join</code>,
 <code>trim</code>, <code>trim/left</code>, <code>trim/right</code>, <code>lower</code>, <code>upper</code>, <code>digit?</code>, <code>space?</code>,
 <code>String/starts?</code>, <code>String/ends?</code>, <code>String/contains?</code>, <code>String/equal?</code>,
 <code>String/lt?</code>, <code>String/lte?</code>, <code>String/gt?</code>, <code>String/gte?</code>, <code>String/find</code>,
@@ -2515,7 +2831,7 @@ collection-first mutation and data-last lookup/predicate forms:</p>
 <p><code>Table/get</code> returns the table’s entry-vector form. Use <code>Table/get*</code> for a
 checked result or <code>Table/get-unsafe</code> when presence is already established:</p>
 <pre><code class="language-que">(let {found? values} (Table/get* "Ada" scores))
-(if found? (get values 0) 0)
+(if found? (get 0 values) 0)
 
 (if (Table/has? "Ada" scores)
     (Table/get-unsafe "Ada" scores)
@@ -2705,12 +3021,12 @@ until it has a deliberate branch.</p>
 This is useful in repeated simulations and parsers with a predictable maximum
 batch size:</p>
 <pre><code class="language-que">(let scratch [])
-(capacity! scratch 1000)
+(capacity! 1000 scratch)
 
 (loop pass (&lt; pass 3)
   (empty! scratch)
   (loop i (&lt; i 1000)
-    (push! scratch (+ pass i)))
+    (push! (+ pass i) scratch))
   (length scratch))
 
 (length scratch)
@@ -2736,19 +3052,19 @@ explicit arithmetic safety guard.</p>
 (let SIZE 10)
 
 (let paths [])
-(capacity! paths (+ SIZE 1))
+(capacity! (+ SIZE 1) paths)
 (loop i (&lt;= i SIZE)
-  (push! paths 1))
+  (push! 1 paths))
 
 (loop row (&lt; row SIZE)
   (loop/for col 1 (&lt;= col SIZE) (++ col)
-    (let left (get paths (- col 1)))
-    (let current (get paths col))
+    (let left (get (- col 1) paths))
+    (let current (get col paths))
     (when (+/safe? current left)
-      (set! paths col (+ current left)))))
+      (set! col (+ current left) paths))))
 
 ; 184756
-(get paths (- (length paths) 1))
+(get (- (length paths) 1) paths)
 </code></pre>
 <p>The vector holds one dynamic-programming row. Initially every entry is one;
 each update adds the number of paths from the cell to the left to the number
@@ -2916,12 +3232,12 @@ que --lib source Vector/sort!
 <pre><code class="language-que">[a b c]
 {a b}
 (length xs)
-(get xs i)
-(set! xs i value)
-(push! xs value)
+(get i xs)
+(set! i value xs)
+(push! value xs)
 (pop! xs)
 (empty! xs)
-(capacity! xs n)
+(capacity! n xs)
 </code></pre>
 <h2 id="functions-and-composition"><a class="header" href="#functions-and-composition">Functions and composition</a></h2>
 <pre><code class="language-que">(lambda (x) body)

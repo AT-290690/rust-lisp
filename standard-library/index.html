@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -208,7 +208,7 @@ example</a> shows each of these patterns in runnable code.</p>
 <tr><td>Combine or inspect values</td><td><code>reduce</code>, <code>sum</code>, <code>product</code>, <code>count</code>, <code>find</code>, <code>some?</code>, <code>every?</code>, <code>minimum</code>, <code>maximum</code></td></tr>
 <tr><td>Reshape a vector</td><td><code>reverse</code>, <code>flat</code>, <code>zip</code>, <code>unzip</code>, <code>slice</code>, <code>take/first</code>, <code>drop/first</code>, <code>partition</code></td></tr>
 <tr><td>Order or classify values</td><td><code>sort</code>, <code>group</code>, <code>unique/int</code>, <code>unique/char</code></td></tr>
-<tr><td>Parse or assemble text</td><td><code>split</code>, <code>split/lines</code>, <code>split/words</code>, <code>trim</code>, <code>join</code>, <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code></td></tr>
+<tr><td>Parse or assemble text</td><td><code>split</code>, <code>split/lines</code>, <code>split/spaces</code>, <code>split/words</code>, <code>trim</code>, <code>join</code>, <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code></td></tr>
 <tr><td>Use key-value data</td><td><code>Table/new</code>, <code>Table/set!</code>, <code>Table/get</code>, <code>Table/has?</code>, <code>Table/entries</code>, <code>Table/update-or!</code>, <code>Table/count</code></td></tr>
 <tr><td>Work directly with a vector</td><td><code>length</code>, <code>get</code>, <code>set!</code>, <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>in-bounds?</code></td></tr>
 </tbody>
@@ -266,7 +266,7 @@ such as <code>++</code> and <code>+=</code>, and compile-time helpers such as <c
 prefer the non-raw name unless you are extending the library itself.</p>
 <h2 id="text-numbers-and-conversion"><a class="header" href="#text-numbers-and-conversion">Text, numbers, and conversion</a></h2>
 <ul>
-<li>Text: <code>split</code>, <code>split/lines</code>, <code>split/words</code>, <code>split/commas</code>, <code>join</code>,
+<li>Text: <code>split</code>, <code>split/lines</code>, <code>split/spaces</code>, <code>split/words</code>, <code>split/commas</code>, <code>join</code>,
 <code>trim</code>, <code>trim/left</code>, <code>trim/right</code>, <code>lower</code>, <code>upper</code>, <code>digit?</code>, <code>space?</code>,
 <code>String/starts?</code>, <code>String/ends?</code>, <code>String/contains?</code>, <code>String/equal?</code>,
 <code>String/lt?</code>, <code>String/lte?</code>, <code>String/gt?</code>, <code>String/gte?</code>, <code>String/find</code>,

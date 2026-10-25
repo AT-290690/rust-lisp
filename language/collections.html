@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -185,9 +185,9 @@
 <h2 id="vectors"><a class="header" href="#vectors">Vectors</a></h2>
 <p>Vectors are homogeneous mutable collections written with square brackets:</p>
 <pre><code class="language-que">(let xs [10 20 30])
-(get xs 1)       ; 20
-(set! xs 1 99)
-(push! xs 40)
+(get 1 xs)       ; 20
+(set! 1 99 xs)
+(push! 40 xs)
 (pop! xs)
 </code></pre>
 <p>The basic operations are:</p>
@@ -198,14 +198,14 @@
 </thead>
 <tbody>
 <tr><td><code>(length xs)</code></td><td>number of elements</td></tr>
-<tr><td><code>(get xs i)</code></td><td>element at index <code>i</code></td></tr>
-<tr><td><code>(set! xs i value)</code></td><td>replace an existing element, or append at <code>length</code></td></tr>
-<tr><td><code>(push! xs value)</code></td><td>append</td></tr>
+<tr><td><code>(get i xs)</code></td><td>element at index <code>i</code></td></tr>
+<tr><td><code>(set! i value xs)</code></td><td>replace an existing element, or append at <code>length</code></td></tr>
+<tr><td><code>(push! value xs)</code></td><td>append</td></tr>
 <tr><td><code>(pop! xs)</code></td><td>remove the final element</td></tr>
 <tr><td><code>(pop-val! xs)</code></td><td>remove and return the final element</td></tr>
 <tr><td><code>(empty! xs)</code></td><td>set length to zero while retaining allocated capacity</td></tr>
-<tr><td><code>(car xs)</code></td><td>first element; equivalent to <code>(get xs 0)</code></td></tr>
-<tr><td><code>(cdr xs)</code>, <code>(cdr xs n)</code></td><td>tail window from offset <code>1</code> or explicit offset <code>n</code></td></tr>
+<tr><td><code>(car xs)</code></td><td>first element; equivalent to <code>(get 0 xs)</code></td></tr>
+<tr><td><code>(cdr xs)</code>, <code>(cdr n xs)</code></td><td>tail window from offset <code>1</code> or explicit offset <code>n</code></td></tr>
 </tbody>
 </table>
 </div>
@@ -213,7 +213,7 @@
 Optimized code relies on the established invariant, so write an explicit guard
 or structure the loop so that the proof is obvious:</p>
 <pre><code class="language-que">(loop i (&lt; i (length xs))
-  (println! (get xs i)))
+  (println! (get i xs)))
 </code></pre>
 <p><code>cdr</code> initially shares the source vector’s backing storage and shifts the
 logical start index; it does not copy every tail. Mutating that result
@@ -234,7 +234,7 @@ names.</p>
 <h2 id="strings-and-characters"><a class="header" href="#strings-and-characters">Strings and characters</a></h2>
 <p>Strings are sequences of <code>Char</code> values, so their language type is <code>[Char]</code>:</p>
 <pre><code class="language-que">(let title "Calque")
-(get title 0)      ; 'Q'
+(get 0 title)      ; 'Q'
 (length title)     ; 3
 (cons "Hello, " title)
 </code></pre>

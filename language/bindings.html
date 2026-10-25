@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -214,7 +214,7 @@ rest ; [30 40]
 (let get-head (lambda ([x . xs]) x))
 </code></pre>
 <p>The names before <code>.</code> bind fixed positions. <code>rest</code> is the same tail window as
-<code>(cdr vector fixed-position-count)</code>: it begins after those positions without
+<code>(cdr fixed-position-count vector)</code>: it begins after those positions without
 initially copying the remaining values. It materializes independently if you
 mutate it. The rest pattern must be final and can bind one name only.</p>
 <h2 id="scope"><a class="header" href="#scope">Scope</a></h2>

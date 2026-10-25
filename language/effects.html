@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -190,6 +190,70 @@ external WASI host.</p>
 </code></pre>
 <pre><code class="language-sh">que program.que --allow read print
 </code></pre>
+<h2 id="what-calque-tracks"><a class="header" href="#what-calque-tracks">What Calque tracks</a></h2>
+<p>Effects are compiler metadata inferred from the implementation of an
+expression. They are useful for diagnostics, permission reporting, ownership
+reasoning, and optimization. They are <strong>not</strong> part of a function’s written
+type: <code>Int -&gt; Int</code> does not say whether a function mutates or performs I/O.</p>
+<p><code>que explain</code> and editor hovers can report one or more of these labels:</p>
+<div class="table-wrapper">
+<table>
+<thead>
+<tr><th>Label</th><th>Meaning</th></tr>
+</thead>
+<tbody>
+<tr><td><code>pure</code></td><td>No known mutation, host I/O, or unresolved call.</td></tr>
+<tr><td><code>mutate</code></td><td>Performs a mutation which the compiler can identify.</td></tr>
+<tr><td><code>io</code></td><td>Calls a host operation or <code>extern</code>; it may require a permission.</td></tr>
+<tr><td><code>unknown-call</code></td><td>Calls a function whose implementation is not statically known at this call site.</td></tr>
+</tbody>
+</table>
+</div>
+<p>The labels combine. For example, a function may be both <code>mutate</code> and <code>io</code>.
+<code>pure</code> is used only when none of the other labels apply.</p>
+<h3 id="unknown-call-is-conservative-not-an-error"><a class="header" href="#unknown-call-is-conservative-not-an-error"><code>unknown-call</code> is conservative, not an error</a></h3>
+<p>Higher-order code often accepts a callback. The callback may be pure, mutate
+its argument, or call the host, but that information is not contained in its
+ordinary function type:</p>
+<pre><code class="language-que">(let apply-twice
+  (lambda (f x)
+    (f (f x))))
+</code></pre>
+<p><code>apply-twice</code> is therefore reported with <code>unknown-call</code>: the parameter <code>f</code>
+could refer to any compatible function. This does <strong>not</strong> mean the program is
+invalid, that it necessarily performs I/O, or that permission was denied. It
+means the compiler cannot make a stronger claim from the source it sees.</p>
+<p>By contrast, a direct call to a locally known implementation can be
+summarised precisely:</p>
+<pre><code class="language-que">(let plus-one (lambda x (+ x 1)))
+(let answer (plus-one 41))
+; `plus-one` and this call are pure.
+</code></pre>
+<p>The analyser also resolves many direct <code>letrec</code> calls. A function passed
+through a parameter, stored behind an unknown value, or invoked indirectly may
+remain <code>unknown-call</code> even when you know it is harmless at runtime.</p>
+<p>This conservatism protects correctness and ownership: around an unknown call,
+the optimizer does not assume that a mutable argument is unchanged, and avoids
+transformations that would reorder, duplicate, or discard the call. It can
+also prevent inlining, loop unrolling, and other optimizations that require a
+known effect. Make the callee direct, or keep the callback boundary explicit,
+when the distinction matters for performance.</p>
+<p>Use <code>que explain</code> to inspect the inferred result for a program:</p>
+<pre><code class="language-sh">que explain program.que --opt
+</code></pre>
+<p>The <strong>Effects and permissions</strong> section gives the combined program effect;
+the <strong>Generated code</strong> section lists effects for individual compiled
+functions. In the editor, hover over a binding to see its inferred effect.</p>
+<h3 id="effects-names-and-permissions"><a class="header" href="#effects-names-and-permissions">Effects, names, and permissions</a></h3>
+<p><code>!</code> is a useful naming convention for operations which mutate or interact with
+the outside world, but it is not a permission grant and does not by itself
+determine an effect. An <code>extern</code> declaration is always treated as host I/O,
+and the external runner enforces its matching <code>--allow</code> capability. Local
+functions infer their effects from their bodies.</p>
+<p>Effects are informative rather than an effect-row type system: there is no
+syntax for declaring “this function is pure,” and <code>sig</code> checks value types,
+not effects. Runtime permissions remain the authority for built-in host
+operations.</p>
 <h2 id="permission-groups"><a class="header" href="#permission-groups">Permission groups</a></h2>
 <div class="table-wrapper">
 <table>
@@ -240,7 +304,7 @@ they are not dynamically typed escape hatches.</p>
 
                     <nav class="nav-wrapper" aria-label="Page navigation">
                         <!-- Mobile navigation buttons -->
-                            <a rel="prev" href="../language/correctness.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                            <a rel="prev" href="../reference/warnings.html" class="mobile-nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                                 <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                             </a>
 
@@ -254,7 +318,7 @@ they are not dynamically typed escape hatches.</p>
             </div>
 
             <nav class="nav-wide-wrapper" aria-label="Page navigation">
-                    <a rel="prev" href="../language/correctness.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
+                    <a rel="prev" href="../reference/warnings.html" class="nav-chapters previous" title="Previous chapter" aria-label="Previous chapter" aria-keyshortcuts="Left">
                         <span class=fa-svg><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 512"><!--! Font Awesome Free 6.2.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2022 Fonticons, Inc. --><path d="M41.4 233.4c-12.5 12.5-12.5 32.8 0 45.3l160 160c12.5 12.5 32.8 12.5 45.3 0s12.5-32.8 0-45.3L109.3 256 246.6 118.6c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0l-160 160z"/></svg></span>
                     </a>
 

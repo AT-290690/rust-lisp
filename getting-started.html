@@ -36,10 +36,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-2f0ff30a.js"></script>
+        <script src="toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -200,7 +200,9 @@ invariants:</p>
 <p><code>--debug</code> keeps runtime guards for checked integer arithmetic, division by
 zero, and vector access where appropriate, and reports static-analysis
 findings. <code>--opt</code> enables optimization and removes those optional runtime
-guards; it is not a substitute for establishing correctness.</p>
+guards; it is not a substitute for establishing correctness.
+See <a href="compiler/release-safety.html">Debug, optimized, and native execution</a> for
+the precise safety and deployment contract.</p>
 <h2 id="learn-from-the-installed-compiler"><a class="header" href="#learn-from-the-installed-compiler">Learn from the installed compiler</a></h2>
 <pre><code class="language-sh">que --help
 que --learn

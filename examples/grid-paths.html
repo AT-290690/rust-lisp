@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -192,19 +192,19 @@ explicit arithmetic safety guard.</p>
 (let SIZE 10)
 
 (let paths [])
-(capacity! paths (+ SIZE 1))
+(capacity! (+ SIZE 1) paths)
 (loop i (&lt;= i SIZE)
-  (push! paths 1))
+  (push! 1 paths))
 
 (loop row (&lt; row SIZE)
   (loop/for col 1 (&lt;= col SIZE) (++ col)
-    (let left (get paths (- col 1)))
-    (let current (get paths col))
+    (let left (get (- col 1) paths))
+    (let current (get col paths))
     (when (+/safe? current left)
-      (set! paths col (+ current left)))))
+      (set! col (+ current left) paths))))
 
 ; 184756
-(get paths (- (length paths) 1))
+(get (- (length paths) 1) paths)
 </code></pre>
 <p>The vector holds one dynamic-programming row. Initially every entry is one;
 each update adds the number of paths from the cell to the left to the number

@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -195,7 +195,7 @@ collection-first mutation and data-last lookup/predicate forms:</p>
 <p><code>Table/get</code> returns the table’s entry-vector form. Use <code>Table/get*</code> for a
 checked result or <code>Table/get-unsafe</code> when presence is already established:</p>
 <pre><code class="language-que">(let {found? values} (Table/get* "Ada" scores))
-(if found? (get values 0) 0)
+(if found? (get 0 values) 0)
 
 (if (Table/has? "Ada" scores)
     (Table/get-unsafe "Ada" scores)

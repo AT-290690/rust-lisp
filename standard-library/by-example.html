@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -185,8 +185,8 @@
 <p>This is the practical first stop for the bundled library: short examples of
 the functions you will use in normal programs. The <a href="index.html">complete library
 index</a> covers every exported family, including low-level helpers.</p>
-<p>Functions that transform a collection usually take that collection last, so
-they compose naturally with <code>|&gt;</code>. Operations ending in <code>!</code> mutate the first
+<p>Functions that transform a collection take that collection last, so they
+compose naturally with <code>|&gt;</code>. Operations ending in <code>!</code> mutate their final
 collection argument and normally return <code>nil</code>.</p>
 <pre><code class="language-que">(|&gt; [1 2 3 4]
     (map (lambda (x) (* x x)))
@@ -200,27 +200,27 @@ same basic read operations work on both.</p>
 <pre><code class="language-que">(let xs [10 20 30])
 
 (length xs)             ; 3
-(get xs 1)              ; 20
+(get 1 xs)              ; 20
 (car xs)                ; 10 — first element
 (cdr xs)                ; [20 30] — tail from offset 1
-(cdr xs 2)              ; [30] — tail from an explicit offset
+(cdr 2 xs)              ; [30] — tail from an explicit offset
 (first xs)              ; 10
 (last xs)               ; 30
-(at xs -1)              ; 30 — negative indexing helper
+(at -1 xs)              ; 30 — negative indexing helper
 (cons [0] xs)           ; [0 10 20 30] — concatenate two vectors
 </code></pre>
 <h3 id="car-cdr-and-tail-windows"><a class="header" href="#car-cdr-and-tail-windows"><code>car</code>, <code>cdr</code>, and tail windows</a></h3>
 <p><code>car</code> reads the first element: it is the head-oriented spelling of
-<code>(get xs 0)</code>. <code>cdr</code> creates a <strong>tail window</strong>. <code>(cdr xs)</code> starts at offset
-<code>1</code>; <code>(cdr xs n)</code> starts at offset <code>n</code>. The window has its own logical index
+<code>(get 0 xs)</code>. <code>cdr</code> creates a <strong>tail window</strong>. <code>(cdr xs)</code> starts at offset
+<code>1</code>; <code>(cdr n xs)</code> starts at offset <code>n</code>. The window has its own logical index
 zero, so it is useful for head-and-tail recursion without copying every tail.</p>
 <pre><code class="language-que">(let xs [10 20 30 40])
-(let tail (cdr xs 2))
+(let tail (cdr 2 xs))
 
-(get tail 0)            ; 30
+(get 0 tail)            ; 30
 (length tail)           ; 2
 
-(set! tail 0 99)
+(set! 0 99 tail)
 {xs tail}
 ; { [10 20 30 40] [99 40] }
 </code></pre>
@@ -234,16 +234,16 @@ representation.</p>
 input. For a dynamic index, use <code>in-bounds?</code>, <code>Vector/get*</code>, or structure the
 loop so the analyser can prove the access.</p>
 <pre><code class="language-que">(if (in-bounds? xs index)
-    (get xs index)
+    (get index xs)
     fallback)
 
 (let {found? values} (Vector/get* index xs))
-(if found? (get values 0) fallback)
+(if found? (get 0 values) fallback)
 </code></pre>
 <p>Mutation is direct and explicit:</p>
 <pre><code class="language-que">(let xs [10 20])
-(set! xs 0 99)          ; [99 20]
-(push! xs 30)           ; append, xs is now [99 20 30]
+(set! 0 99 xs)          ; [99 20]
+(push! 30 xs)           ; append, xs is now [99 20 30]
 (let last-value (pop-val! xs))
 (pop! xs)               ; remove the last value and return nil
 (empty! xs)             ; length becomes zero; allocation remains available
@@ -252,8 +252,8 @@ loop so the analyser can prove the access.</p>
 effect-only. <code>capacity</code> is the non-mutating version: it copies first, reserves
 the copy, and returns it. <code>compact!</code> discards unused vector capacity.</p>
 <pre><code class="language-que">(let out [])
-(capacity! out 1000)
-(loop i (&lt; i 1000) (push! out i))
+(capacity! 1000 out)
+(loop i (&lt; i 1000) (push! i out))
 
 (let copy-with-room (capacity 1000 out))
 (compact! out)
@@ -321,7 +321,7 @@ and its alias <code>select</code> retain matching values; <code>exclude</code> r
 returns the original vector, which is useful in a pipeline. Their <code>/i</code> forms
 also receive an index.</p>
 <pre><code class="language-que">(let seen [])
-(for (lambda (x) (push! seen x)) [1 2 3])
+(for (lambda (x) (push! x seen)) [1 2 3])
 ; seen is [1 2 3]
 
 (|&gt; [1 2 3]
@@ -381,12 +381,18 @@ element types. <code>group</code> builds a table keyed by a function result:</p>
 <p>Strings have type <code>[Char]</code>. <code>split</code> takes the separator first and text last;
 <code>join</code> takes the separator first and a vector of strings last.</p>
 <pre><code class="language-que">(split "," "red,green,blue")             ; ["red" "green" "blue"]
-(split/lines "one\ntwo")                  ; ["one" "two"]
-(split/words "one two")                   ; ["one" "two"]
+(split/lines "one\n\ntwo")                ; ["one" "" "two"]
+(split/spaces "one  two")                 ; ["one" "" "two"]
+(split/words "  one\ttwo\nthree  ")       ; ["one" "two" "three"]
 (join "/" ["usr" "local" "bin"])        ; "usr/local/bin"
 (trim "  Calque  ")                       ; "Calque"
 (slice 1 4 "Calque")                      ; "alq"
 </code></pre>
+<p><code>split</code> and <code>split/spaces</code> are raw delimiter splits: repeated, leading, and
+trailing delimiters produce empty fields. <code>split/lines</code> follows that rule so
+blank lines remain available as structure in an input. <code>split/words</code> is the
+tokenizing variant: it splits on spaces, tabs, carriage returns, and newlines,
+and drops empty fields.</p>
 <p>Use <code>lower</code>, <code>upper</code>, <code>digit?</code>, <code>space?</code>, and the <code>String/*</code> predicates for
 text logic:</p>
 <pre><code class="language-que">(lower 'Q')                               ; 'q'
@@ -464,7 +470,7 @@ new tables. <code>Table/count</code> and <code>Table/frequency</code> build coun
 (Heap/push! heap 4 before?)
 (Heap/push! heap 1 before?)
 (Heap/peek! heap)                         ; 1
-(Heap/pop! heap before?)
+(Heap/pop! before? heap)
 </code></pre>
 <p><code>Que/new</code> creates a deque with a default value. Use <code>Que/append!</code>/<code>Que/push!</code>
 and <code>Que/prepend!</code> to add at either end; <code>Que/pop!</code> and <code>Que/tail!</code> remove;

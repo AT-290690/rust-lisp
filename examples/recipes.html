@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -264,12 +264,12 @@ until it has a deliberate branch.</p>
 This is useful in repeated simulations and parsers with a predictable maximum
 batch size:</p>
 <pre><code class="language-que">(let scratch [])
-(capacity! scratch 1000)
+(capacity! 1000 scratch)
 
 (loop pass (&lt; pass 3)
   (empty! scratch)
   (loop i (&lt; i 1000)
-    (push! scratch (+ pass i)))
+    (push! (+ pass i) scratch))
   (length scratch))
 
 (length scratch)

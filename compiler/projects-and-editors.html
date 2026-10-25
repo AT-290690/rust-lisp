@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -181,7 +181,7 @@
 
                 <div id="mdbook-content" class="content">
                     <main>
-                        <h1 id="projects-tests-and-editors"><a class="header" href="#projects-tests-and-editors">Projects, tests, and editors</a></h1>
+                        <h1 id="projects-composition-tests-and-editors"><a class="header" href="#projects-composition-tests-and-editors">Projects, composition, tests, and editors</a></h1>
 <h2 id="quetoml"><a class="header" href="#quetoml"><code>que.toml</code></a></h2>
 <p>When compiling a <code>.que</code> file, Calque searches upward from that file for a
 <code>que.toml</code>. The configuration can provide source bundles and environment
@@ -207,15 +207,55 @@ definitions with the standard library and the compiled source file.</p>
 <p>The <code>entry</code> field records the intended entrypoint for tooling and project
 conventions; compilation is driven by the source file passed to the current
 CLI command.</p>
-<h2 id="tests"><a class="header" href="#tests">Tests</a></h2>
-<p>Calque code is ordinary source, so a small test file can call project definitions
-and end by returning or printing a useful value. The bundled <code>test</code> macro is
-also available for assertion-shaped values. Run test sources with the same
-debug or optimized workflow you use for programs:</p>
+<h2 id="composition-not-modules"><a class="header" href="#composition-not-modules">Composition, not modules</a></h2>
+<p>Today Calque projects use <strong>ordered source composition</strong>, not an import/module
+system or package registry. A dependency bundle contributes its top-level
+names to the program that is compiled. This has useful consequences:</p>
+<ul>
+<li>dependencies are ordinary <code>.que</code> source, versioned with the project;</li>
+<li>definitions must appear before uses, so dependency order in <code>deps</code> matters;</li>
+<li>a dependency cannot perform top-level I/O or other run-time work;</li>
+<li>duplicate top-level names are an error rather than an override mechanism;</li>
+<li>recursive calls use <code>letrec</code> inside one definition; mutually recursive
+top-level bundles are not currently a project feature.</li>
+</ul>
+<p>A small project can therefore use a simple layout:</p>
+<pre><code class="language-text">report/
+  que.toml
+  lib/parse.que
+  lib/stats.que
+  main.que
+  tests/report.test.que
+</code></pre>
+<p>Keep reusable <code>let</code>/<code>letrec</code> definitions in <code>lib/*.que</code>, list them in
+dependency order in <code>que.toml</code>, and keep execution and host I/O in <code>main.que</code>.
+This is deliberately explicit until Calque grows a real module/package model.</p>
+<h2 id="tests-and-ci"><a class="header" href="#tests-and-ci">Tests and CI</a></h2>
+<p>Calque test files are ordinary source. A useful small test file returns data
+that a shell runner, CI job, or person can inspect:</p>
+<pre><code class="language-que">; tests/math.test.que
+(let square (lambda (n) (* n n)))
+
+[(test "square of zero" (= (square 0) 0))
+ (test "square of nine" (= (square 9) 81))]
+; [{"square of zero" true} {"square of nine" true}]
+</code></pre>
+<p><code>test</code> is intentionally a tiny macro that creates <code>{name outcome}</code> data. It
+does not provide a hidden test runner or magical assertion behavior. Run test
+sources in debug mode first:</p>
 <pre><code class="language-sh">que tests/math.test.que --debug
 </code></pre>
-<p>Compiler regression tests live in the Rust workspace; run them from a checkout
-with <code>cargo test</code>.</p>
+<p>For a project, make CI run formatting, debug tests, optimized tests where
+relevant, and the compiler’s own Rust suite from a checkout:</p>
+<pre><code class="language-sh">que fmt main.que --check
+que tests/math.test.que --debug
+que tests/math.test.que --opt
+cargo test
+</code></pre>
+<p>Use a real assertion runner around the printed result if a nonzero process exit
+on <code>false</code> is required today. A debug/optimized or WASI/native output mismatch
+for the same valid test input is a compiler bug; preserve the smallest
+reproducer and the commands used. See the <a href="debugging.html">debugging cookbook</a>.</p>
 <h2 id="formatter"><a class="header" href="#formatter">Formatter</a></h2>
 <pre><code class="language-sh">que fmt program.que
 que fmt program.que --check

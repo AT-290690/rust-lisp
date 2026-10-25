@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -223,6 +223,11 @@ the contract and makes an accidental specialization easier to find:</p>
 </code></pre>
 <p>Check destructuring too: <code>[head . tail]</code> needs a non-empty vector, while
 <code>{left right}</code> expects a two-field tuple.</p>
+<p>The compiler and both language servers collect independent top-level type
+errors together. During diagnostic recovery only, a failed declaration gets an
+internal unknown placeholder so later forms can still be checked; it never
+makes the program valid or compilable. This avoids distracting “undefined
+variable” cascades while still finding other errors in those later forms.</p>
 <h2 id="a-bounds-empty-vector-or-arithmetic-warning"><a class="header" href="#a-bounds-empty-vector-or-arithmetic-warning">A bounds, empty-vector, or arithmetic warning</a></h2>
 <p>Warnings mean the analyser could not prove the required fact. They are not all
 runtime failures, but they deserve an explicit decision. Run the full report:</p>
@@ -230,7 +235,7 @@ runtime failures, but they deserve an explicit decision. Run the full report:</p
 </code></pre>
 <p>Make the condition visible at the use site:</p>
 <pre><code class="language-que">(if (and (&gt;= index 0) (&lt; index (length xs)))
-    (get xs index)
+    (get index xs)
     fallback)
 </code></pre>
 <p>For arithmetic, make both outcomes value-producing with <code>if</code> or <code>cond</code>:</p>

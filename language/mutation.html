@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-0ff6845a.js";
+            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-2f0ff30a.js"></script>
+        <script src="../toc-af1f57ee.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -190,24 +190,24 @@ local counters, in-place algorithms, and predictable allocation behavior.</p>
   (+= total i))
 
 (let xs [])
-(push! xs total)
-(set! xs 0 42)
+(push! total xs)
+(set! 0 42 xs)
 </code></pre>
-<p>The caller-visible mutable value of a function is normally rooted in its first
-parameter. This keeps mutation APIs regular:</p>
+<p>The caller-visible mutable value of a function is normally its final
+parameter. This keeps mutation APIs pipeline-friendly:</p>
 <pre><code class="language-que">(let fill-zeroes!
   (lambda (xs)
     (loop i (&lt; i (length xs))
-      (set! xs i 0))
+      (set! i 0 xs))
     xs))
 </code></pre>
 <h2 id="reserving-vector-storage"><a class="header" href="#reserving-vector-storage">Reserving vector storage</a></h2>
 <p><code>capacity!</code> reserves backing storage without changing a vector’s length:</p>
 <pre><code class="language-que">(let paths [])
-(capacity! paths 1000)
+(capacity! 1000 paths)
 
 (loop i (&lt; i 1000)
-  (push! paths i))
+  (push! i paths))
 </code></pre>
 <p>It is useful before a known burst of appends. It returns unit, deliberately:
 the vector itself remains the same mutable value. <code>empty!</code> similarly resets
