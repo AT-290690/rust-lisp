@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
+            window.path_to_searchindex_js = "../searchindex-323e071c.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-af1f57ee.js"></script>
@@ -250,9 +250,9 @@ integers, strings, enum tags, or table keys rather than managed pointers or
 closures that refer back to their owner:</p>
 <pre><code class="language-que">; Node id -&gt; ids of outgoing neighbours.
 (let edges (Table/new))
-(Table/set! edges 0 [1 2])
-(Table/set! edges 1 [2])
-(Table/set! edges 2 [0])
+(Table/set! 0 [1 2] edges)
+(Table/set! 1 [2] edges)
+(Table/set! 2 [0] edges)
 </code></pre>
 <p>That graph has a logical cycle (<code>0 → 1 → 2 → 0</code>), but its values do not own one
 another. It is ordinary acyclic runtime storage and works with the graph

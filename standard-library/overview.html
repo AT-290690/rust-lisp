@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
+            window.path_to_searchindex_js = "../searchindex-323e071c.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-af1f57ee.js"></script>
@@ -206,14 +206,15 @@ specialist or implementation-level name.</p>
 <li>Namespace-like names use <code>/</code>: <code>Vector/sort!</code>, <code>String/contains?</code>,
 <code>Table/update!</code>.</li>
 <li>Transform-style functions usually take data last so they work with <code>|&gt;</code>.</li>
-<li>Mutating collection operations normally take the collection first.</li>
+<li>Collection operations, including mutating ones, normally take their
+collection last.</li>
 </ul>
 <pre><code class="language-que">(|&gt; xs
     (map normalize)
     (select valid?)
     sum)
 
-(Table/set! table key value)
+(Table/set! key value table)
 </code></pre>
 <h2 id="main-families"><a class="header" href="#main-families">Main families</a></h2>
 <div class="table-wrapper">

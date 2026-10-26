@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-72bbbec9.js";
+            window.path_to_searchindex_js = "../searchindex-323e071c.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-af1f57ee.js"></script>
@@ -218,10 +218,11 @@ the maximum <code>Int</code> value.</p>
   (lambda (words)
     (let counts (Table/new))
     (loop/in word words
-      (Table/update-or! counts word
+      (Table/update-or! word
         (lambda () 1)
         (lambda (n)
-          (if (+/safe? n 1) (+ n 1) n))))
+          (if (+/safe? n 1) (+ n 1) n))
+        counts))
     counts))
 
 (let counts (frequency ["tea" "coffee" "tea" "tea"]))
