@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-323e071c.js";
+            window.path_to_searchindex_js = "../searchindex-396f8759.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-af1f57ee.js"></script>
@@ -196,6 +196,8 @@
 </thead>
 <tbody>
 <tr><td><code>map</code> / <code>map/i</code></td><td>build a new vector; <code>/i</code> receives the index</td></tr>
+<tr><td><code>pairwise</code></td><td>build overlapping adjacent <code>{left right}</code> tuples</td></tr>
+<tr><td><code>map/adjacent</code></td><td>transform each neighboring pair directly</td></tr>
 <tr><td><code>filter</code>, <code>select</code>, <code>filter/i</code></td><td>retain items satisfying a predicate</td></tr>
 <tr><td><code>each</code> / <code>each/i</code></td><td>visit items and return the original vector</td></tr>
 <tr><td><code>for</code> / <code>for/i</code></td><td>visit items for effects</td></tr>
@@ -208,6 +210,13 @@
 ; 60
 
 (map/i (lambda (x index) {index x}) ["a" "b"])
+</code></pre>
+<p><code>pairwise</code> is data-last and returns one fewer tuple than its input. It is
+empty for inputs shorter than two elements.</p>
+<pre><code class="language-que">(|&gt; [1 4 9 16]
+    pairwise
+    (map (lambda ({left right}) (- right left))))
+; [3 5 7]
 </code></pre>
 <h2 id="construct-and-order"><a class="header" href="#construct-and-order">Construct and order</a></h2>
 <p><code>range</code>, <code>range/inclusive</code>, and related helpers construct numeric sequences.

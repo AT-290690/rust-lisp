@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-323e071c.js";
+            window.path_to_searchindex_js = "../searchindex-396f8759.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-af1f57ee.js"></script>
@@ -206,7 +206,7 @@ example</a> shows each of these patterns in runnable code.</p>
 <tr><td>Transform or retain vector values</td><td><code>map</code>, <code>map/i</code>, <code>filter</code> (or <code>select</code>), <code>exclude</code>, <code>flat-map</code></td></tr>
 <tr><td>Visit for effects</td><td><code>for</code>, <code>each</code>, <code>for/i</code>, <code>each/i</code></td></tr>
 <tr><td>Combine or inspect values</td><td><code>reduce</code>, <code>sum</code>, <code>product</code>, <code>count</code>, <code>find</code>, <code>some?</code>, <code>every?</code>, <code>minimum</code>, <code>maximum</code></td></tr>
-<tr><td>Reshape a vector</td><td><code>reverse</code>, <code>flat</code>, <code>zip</code>, <code>unzip</code>, <code>slice</code>, <code>take/first</code>, <code>drop/first</code>, <code>partition</code></td></tr>
+<tr><td>Reshape a vector</td><td><code>reverse</code>, <code>flat</code>, <code>zip</code>, <code>unzip</code>, <code>slice</code>, <code>take/first</code>, <code>drop/first</code>, <code>partition</code>, <code>pairwise</code></td></tr>
 <tr><td>Order or classify values</td><td><code>sort</code>, <code>group</code>, <code>unique/int</code>, <code>unique/char</code></td></tr>
 <tr><td>Parse or assemble text</td><td><code>split</code>, <code>split/lines</code>, <code>split/spaces</code>, <code>split/words</code>, <code>trim</code>, <code>join</code>, <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code></td></tr>
 <tr><td>Use key-value data</td><td><code>Table/new</code>, <code>Table/set!</code>, <code>Table/get</code>, <code>Table/has?</code>, <code>Table/entries</code>, <code>Table/update-or!</code>, <code>Table/count</code></td></tr>
@@ -240,7 +240,7 @@ such as <code>++</code> and <code>+=</code>, and compile-time helpers such as <c
 <li>Construction and shape: <code>range</code>, <code>range/inclusive</code>, <code>range/exclusive</code>,
 <code>range/dec</code>, <code>fill</code>, <code>replicate</code>, <code>copy</code>, <code>reverse</code>, <code>flat</code>, <code>flat-map</code>,
 <code>zip</code>, <code>unzip</code>, <code>zip-with</code>, <code>transpose</code>, <code>interleave</code>, <code>intersperse</code>,
-<code>partition</code>, <code>window</code>, <code>slice</code>, <code>take/first</code>, <code>take/last</code>, <code>drop/first</code>,
+<code>partition</code>, <code>window</code>, <code>pairwise</code>, <code>slice</code>, <code>take/first</code>, <code>take/last</code>, <code>drop/first</code>,
 <code>drop/last</code>, <code>take/while</code>, <code>drop/while</code>, <code>cycle</code>, <code>subset</code>,
 <code>permutation</code>, <code>combination</code>, <code>combination/n</code>, and <code>scan</code>.</li>
 <li>Traversal: <code>map</code>, <code>map/i</code>, <code>filter</code>, <code>filter/i</code>, <code>select</code>, <code>exclude</code>,
@@ -253,7 +253,7 @@ such as <code>++</code> and <code>+=</code>, and compile-time helpers such as <c
 <code>product/dec</code>, <code>minimum</code>, <code>minimum/dec</code>, <code>maximum</code>, <code>maximum/dec</code>, <code>mean</code>,
 <code>mean/dec</code>, <code>median</code>, <code>median/dec</code>, <code>avg</code>, and <code>avg/dec</code>.</li>
 <li>Ordering and specialized operations: <code>sort</code>, <code>group</code>, <code>unique/int</code>,
-<code>unique/char</code>, <code>map/adjacent</code>, <code>map/tuple</code>, <code>map/fst</code>, <code>map/snd</code>,
+<code>unique/char</code>, <code>pairwise</code>, <code>map/adjacent</code>, <code>map/tuple</code>, <code>map/fst</code>, <code>map/snd</code>,
 <code>resolve/option</code>, <code>autocorrect</code>, <code>match?</code>, <code>cartesian-product</code>, and
 <code>neighborhood</code>.</li>
 </ul>

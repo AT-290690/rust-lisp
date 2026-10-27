@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-323e071c.js";
+            window.path_to_searchindex_js = "../searchindex-396f8759.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-af1f57ee.js"></script>
@@ -297,11 +297,27 @@ excluded; <code>range/dec</code> creates decimal values.</p>
 (drop/last 2 [0 1 2 3])                 ; [0 1]
 (partition 2 [1 2 3 4 5])               ; [[1 2] [3 4] [5]]
 (window 3 [1 2 3 4])                    ; [[1 2 3] [2 3 4]]
+(pairwise [1 2 3 4])                    ; [{1 2} {2 3} {3 4}]
 </code></pre>
 <p><code>take/while</code> retains the initial matching prefix; <code>drop/while</code> removes that
 prefix. <code>cycle</code>, <code>subset</code>, <code>permutation</code>, <code>combination</code>, and <code>combination/n</code>
 are combinatoric builders. <code>transpose</code> turns rows into columns; <code>Matrix/new</code>
 and <code>Matrix/for/i</code> are the more direct matrix tools.</p>
+<p><code>pairwise</code> returns the overlapping adjacent pairs of a vector as tuples. An
+empty or one-element input has no pairs. Use it when the pairs themselves are
+useful data; use <code>map/adjacent</code> when you want to transform every neighboring
+pair immediately.</p>
+<pre><code class="language-que">(pairwise [10 13 18 20])
+; [{10 13} {13 18} {18 20}]
+
+(map/adjacent - [10 13 18 20])
+; [-3 -5 -2]
+
+(|&gt; [10 13 18 20]
+    pairwise
+    (map (lambda ({left right}) (abs (- right left)))))
+; [3 5 2]
+</code></pre>
 <h2 id="map-filter-visit-and-fold"><a class="header" href="#map-filter-visit-and-fold">Map, filter, visit, and fold</a></h2>
 <p><code>map</code> transforms every element. The <code>/i</code> forms pass <code>(value index)</code>. <code>filter</code>
 and its alias <code>select</code> retain matching values; <code>exclude</code> removes them.</p>
