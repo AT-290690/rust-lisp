@@ -37,10 +37,10 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-396f8759.js";
+            window.path_to_searchindex_js = "searchindex-ad3a9f14.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="toc-af1f57ee.js"></script>
+        <script src="toc-57000871.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -1242,6 +1242,7 @@ receive syntax, not evaluated values.</p>
 <li><code>|&gt;</code>, <code>&lt;|</code>, <code>comp</code>, <code>apply</code></li>
 <li><code>loop</code>, <code>loop/for</code>, <code>loop/in</code>, <code>loop/in/i</code>, range-loop helpers, <code>times</code></li>
 <li><code>let*</code>, <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>++</code>, <code>--</code></li>
+<li>Decimal compound assignment: <code>+=.</code>, <code>-=.</code>, <code>*=.</code>, <code>/=.</code></li>
 <li><code>&amp;mut</code>, <code>&amp;get</code>, <code>&amp;alter!</code>, <code>variable</code></li>
 <li><code>match/string</code></li>
 </ul>
@@ -1249,6 +1250,15 @@ receive syntax, not evaluated values.</p>
 a macro call becomes. Formatter, LSP, and diagnostics preserve source
 locations where possible, but macro-generated code can still make a complex
 error easier to understand after looking at that expansion.</p>
+<p>The decimal forms mirror the integer ones while preserving fixed-point <code>Dec</code>
+arithmetic. They are intentionally compound assignments rather than a decimal
+<code>++.</code> shorthand:</p>
+<pre><code class="language-que">(mut opacity 0.25)
+(+=. opacity 0.10)
+(*=. opacity 2.0)
+opacity
+; 0.7
+</code></pre>
 <h2 id="macro-discipline"><a class="header" href="#macro-discipline">Macro discipline</a></h2>
 <p>Prefer a function when values are enough. Prefer a macro when the caller needs
 new binding structure, control flow, or syntactic rearrangement. Keep macro
@@ -1357,6 +1367,25 @@ needs to be written at a serialization boundary.</p>
 </code></pre>
 <p>An arrow chain associates to the right. Parenthesize a function when it is an
 argument type.</p>
+<h2 id="named-generic-roles-are-rigid"><a class="header" href="#named-generic-roles-are-rigid">Named generic roles are rigid</a></h2>
+<p>Inside a <code>sig</code>, a named type variable is a role in the contract, not a
+placeholder that the implementation may silently specialize. Repeated names
+must remain the same type; different names must remain different roles.</p>
+<pre><code class="language-que">(sig wrap (T -&gt; [T]))
+(let wrap (lambda (x) [x])) ; valid
+
+(sig broken (T -&gt; [T]))
+(let broken (lambda (x) [3])) ; error: T was forced to Int
+</code></pre>
+<p>Likewise, the order of generic roles matters:</p>
+<pre><code class="language-que">(sig pair (T -&gt; K -&gt; [{ T K }]))
+(let pair (lambda (left right) [{right left}])) ; error
+</code></pre>
+<p>Use <code>_</code> for an intentionally unconstrained slot. Every <code>_</code> is a new flexible
+wildcard, unlike a repeated named role:</p>
+<pre><code class="language-que">(sig keep-left (T -&gt; _ -&gt; T))
+(let keep-left (lambda (x ignored) x))
+</code></pre>
 <h2 id="inspect-inferred-types"><a class="header" href="#inspect-inferred-types">Inspect inferred types</a></h2>
 <pre><code class="language-sh">que program.que --emit types
 que explain program.que
@@ -2053,6 +2082,10 @@ and project-aware definitions. The repository includes:</p>
 <p>The Neovim integration provides <code>:QueFormat</code> / <code>&lt;Space&gt;f</code> and <code>:QueLib</code> /
 <code>&lt;Space&gt;g</code>. In <code>que nvim</code>, scratch commands include optimized run, debug run,
 WAT, inferred types, <code>explain</code>, expanded source, and library browsing.</p>
+<p>Use <code>que nvim --file program.que</code> to open and edit an existing Calque file.
+The optional permission flags, such as <code>--allow read</code>, are forwarded to its
+run and debug mappings. <code>que nvim</code> and <code>que nvim --code "..."</code> instead open
+disposable scratch buffers.</p>
 <p>See the integration READMEs for installation details and configuration
 examples.</p>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -2400,9 +2433,14 @@ excluded; <code>range/dec</code> creates decimal values.</p>
 
 (replicate 3 "go")     ; ["go" "go" "go"]
 (fill 4 (lambda (i) (* i i)))
+; [0 1 4 9]
+(Vector/new (lambda (i) i) 5)
+; [0 1 2 3 4]
 (zeroes 4)              ; [0 0 0 0]
 (ones 4)                ; [1 1 1 1]
 </code></pre>
+<p><code>fill</code> and <code>Vector/new</code> call their callback once per output index, from <code>0</code>
+through <code>n - 1</code>, and place each result at that same index.</p>
 <p>The common shape operations return fresh vectors:</p>
 <pre><code class="language-que">(reverse [1 2 3])                       ; [3 2 1]
 (flat [[1 2] [3] [4 5]])                ; [1 2 3 4 5]
@@ -2558,6 +2596,30 @@ text logic:</p>
 <code>String/matches-at?</code>, <code>String/damerau-levenshtein</code>, <code>String/quote</code>,
 <code>String/dquote</code>, and <code>String/prepend-zeroes</code>. <code>match?</code> compares two character
 vectors exactly.</p>
+<h3 id="regular-expressions"><a class="header" href="#regular-expressions">Regular expressions</a></h3>
+<p><code>String/regex</code> compiles a reusable regular expression. A compiled expression
+can be checked with <code>String/regex/valid?</code>, then used for either a whole-text
+match or a substring search. Both matching functions take the text last.</p>
+<pre><code class="language-que">(let identifier (String/regex "^[a-zA-Z_][a-zA-Z0-9_]*$"))
+
+(String/regex/valid? identifier)                 ; true
+(String/regex/matches? identifier "calque_2")    ; true
+(String/regex/matches? identifier "2calque")     ; false
+(String/regex/contains? (String/regex "cat") "concatenate")
+; true
+
+; One-off convenience forms compile the pattern for this call.
+(String/matches-regex? "[0-9]+" "2048")          ; true
+(String/contains-regex? "\\d+" "item-42")       ; true
+</code></pre>
+<p>The engine is a predictable Thompson NFA, not a PCRE implementation. It
+supports grouping, alternation (<code>|</code>), <code>*</code>, <code>+</code>, <code>?</code>, <code>.</code>, <code>^</code>, <code>$</code>, character
+classes (including negated ASCII ranges), and <code>\\d</code>, <code>\\D</code>, <code>\\w</code>, <code>\\W</code>, <code>\\s</code>,
+<code>\\S</code>, <code>\\n</code>, <code>\\r</code>, <code>\\t</code>, <code>\\f</code>, and <code>\\v</code>. Literal characters may be Unicode
+code points, but character classes and shorthand classes are ASCII-oriented.
+Counted repetitions (<code>{m,n}</code>), word boundaries, backreferences, look-around,
+and hexadecimal escapes are deliberately unsupported. An invalid pattern makes
+<code>String/regex/valid?</code> false; matching predicates return <code>false</code> for it.</p>
 <h2 id="numeric-helpers"><a class="header" href="#numeric-helpers">Numeric helpers</a></h2>
 <p>Normal <code>Int</code> arithmetic is signed <code>i32</code>; decimals use <code>Dec</code> and dotted
 operators. The predicate variants let a program establish a safety condition
@@ -2736,7 +2798,9 @@ prefer the non-raw name unless you are extending the library itself.</p>
 <code>String/starts?</code>, <code>String/ends?</code>, <code>String/contains?</code>, <code>String/equal?</code>,
 <code>String/lt?</code>, <code>String/lte?</code>, <code>String/gt?</code>, <code>String/gte?</code>, <code>String/find</code>,
 <code>String/find/last</code>, <code>String/matches-at?</code>, <code>String/damerau-levenshtein</code>,
-<code>String/quote</code>, <code>String/dquote</code>, and <code>String/prepend-zeroes</code>.</li>
+<code>String/quote</code>, <code>String/dquote</code>, <code>String/prepend-zeroes</code>, <code>String/regex</code>,
+<code>String/regex/valid?</code>, <code>String/regex/matches?</code>, <code>String/regex/contains?</code>,
+<code>String/matches-regex?</code>, and <code>String/contains-regex?</code>.</li>
 <li>Conversions: <code>String-&gt;Integer</code>, <code>Integer-&gt;String</code>, <code>String-&gt;Dec</code>,
 <code>Dec-&gt;String</code>, <code>String-&gt;Bool</code>, <code>String-&gt;Vector</code>, <code>Char-&gt;Int</code>, <code>Int-&gt;Char</code>,
 <code>Char-&gt;Bool</code>, <code>Bool-&gt;Char</code>, <code>Bool-&gt;Int</code>, <code>Int-&gt;Bool</code>, <code>Int-&gt;Dec</code>,
@@ -3144,6 +3208,46 @@ than accessing that representation directly.</p>
 <p>Enum serialization uses declared names (<code>Rock</code>, <code>Paper</code>, <code>Scissors</code>), and the
 decoder validates them against the expected enum. <code>=~</code> compares values of this
 same enum; <code>match</code> checks coverage of its variants.</p>
+<div style="break-before: page; page-break-before: always;"></div>
+<h1 id="regular-expressions-1"><a class="header" href="#regular-expressions-1">Regular expressions</a></h1>
+<p>Calque’s regular-expression engine is a Thompson NFA: matching time stays
+predictable even for patterns that cause catastrophic backtracking in engines
+based on recursive backtracking.</p>
+<p>Compile a pattern once if it is reused. <code>String/regex/matches?</code> requires the
+whole input to match, while <code>String/regex/contains?</code> searches for a match
+anywhere in the input. Both take their text argument last.</p>
+<pre><code class="language-que">; Compile once when a pattern will be reused.
+(let identifier (String/regex "^[a-zA-Z_][a-zA-Z0-9_]*$"))
+
+(let candidates ["calque_2" "2calque" "with-dash"])
+(let identifiers
+  (map
+    (lambda text (String/regex/matches? identifier text))
+    candidates))
+
+; `contains?` searches anywhere in the text.
+(let ticket (String/regex "ticket-[0-9]+"))
+(let contains-ticket
+  (String/regex/contains? ticket "opened ticket-42 for review"))
+
+; Invalid patterns compile to a value that can be checked safely.
+(let invalid (String/regex "a{3}"))
+
+{identifiers {contains-ticket (String/regex/valid? invalid)}}
+; {[true false false] {true false}}
+</code></pre>
+<p>Run it from a checkout with:</p>
+<pre><code class="language-sh">que examples/demo/05-regex.que --debug
+</code></pre>
+<p>Supported syntax is grouping, alternation (<code>|</code>), <code>*</code>, <code>+</code>, <code>?</code>, <code>.</code>, <code>^</code>, <code>$</code>,
+character classes and ranges, negated classes, and the <code>\\d</code>, <code>\\D</code>, <code>\\w</code>,
+<code>\\W</code>, <code>\\s</code>, <code>\\S</code>, <code>\\n</code>, <code>\\r</code>, <code>\\t</code>, <code>\\f</code>, and <code>\\v</code> escapes. It is not a
+PCRE implementation: counted repetition, word boundaries, backreferences,
+look-around, and hexadecimal escapes are unsupported.</p>
+<p><code>String/regex</code> never throws for invalid pattern syntax. Instead,
+<code>String/regex/valid?</code> reports <code>false</code>, and the matching predicates return
+<code>false</code>. This permits dynamic patterns without making malformed input a
+runtime failure.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="syntax-and-literals"><a class="header" href="#syntax-and-literals">Syntax and literals</a></h1>
 <p>Calque uses S-expressions. Whitespace separates forms; parentheses make a

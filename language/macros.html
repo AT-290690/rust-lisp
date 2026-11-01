@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-396f8759.js";
+            window.path_to_searchindex_js = "../searchindex-ad3a9f14.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-af1f57ee.js"></script>
+        <script src="../toc-57000871.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -202,6 +202,7 @@ receive syntax, not evaluated values.</p>
 <li><code>|&gt;</code>, <code>&lt;|</code>, <code>comp</code>, <code>apply</code></li>
 <li><code>loop</code>, <code>loop/for</code>, <code>loop/in</code>, <code>loop/in/i</code>, range-loop helpers, <code>times</code></li>
 <li><code>let*</code>, <code>+=</code>, <code>-=</code>, <code>*=</code>, <code>/=</code>, <code>++</code>, <code>--</code></li>
+<li>Decimal compound assignment: <code>+=.</code>, <code>-=.</code>, <code>*=.</code>, <code>/=.</code></li>
 <li><code>&amp;mut</code>, <code>&amp;get</code>, <code>&amp;alter!</code>, <code>variable</code></li>
 <li><code>match/string</code></li>
 </ul>
@@ -209,6 +210,15 @@ receive syntax, not evaluated values.</p>
 a macro call becomes. Formatter, LSP, and diagnostics preserve source
 locations where possible, but macro-generated code can still make a complex
 error easier to understand after looking at that expansion.</p>
+<p>The decimal forms mirror the integer ones while preserving fixed-point <code>Dec</code>
+arithmetic. They are intentionally compound assignments rather than a decimal
+<code>++.</code> shorthand:</p>
+<pre><code class="language-que">(mut opacity 0.25)
+(+=. opacity 0.10)
+(*=. opacity 2.0)
+opacity
+; 0.7
+</code></pre>
 <h2 id="macro-discipline"><a class="header" href="#macro-discipline">Macro discipline</a></h2>
 <p>Prefer a function when values are enough. Prefer a macro when the caller needs
 new binding structure, control flow, or syntactic rearrangement. Keep macro

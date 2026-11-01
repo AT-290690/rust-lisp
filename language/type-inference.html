@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-396f8759.js";
+            window.path_to_searchindex_js = "../searchindex-ad3a9f14.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-af1f57ee.js"></script>
+        <script src="../toc-57000871.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -214,6 +214,25 @@ needs to be written at a serialization boundary.</p>
 </code></pre>
 <p>An arrow chain associates to the right. Parenthesize a function when it is an
 argument type.</p>
+<h2 id="named-generic-roles-are-rigid"><a class="header" href="#named-generic-roles-are-rigid">Named generic roles are rigid</a></h2>
+<p>Inside a <code>sig</code>, a named type variable is a role in the contract, not a
+placeholder that the implementation may silently specialize. Repeated names
+must remain the same type; different names must remain different roles.</p>
+<pre><code class="language-que">(sig wrap (T -&gt; [T]))
+(let wrap (lambda (x) [x])) ; valid
+
+(sig broken (T -&gt; [T]))
+(let broken (lambda (x) [3])) ; error: T was forced to Int
+</code></pre>
+<p>Likewise, the order of generic roles matters:</p>
+<pre><code class="language-que">(sig pair (T -&gt; K -&gt; [{ T K }]))
+(let pair (lambda (left right) [{right left}])) ; error
+</code></pre>
+<p>Use <code>_</code> for an intentionally unconstrained slot. Every <code>_</code> is a new flexible
+wildcard, unlike a repeated named role:</p>
+<pre><code class="language-que">(sig keep-left (T -&gt; _ -&gt; T))
+(let keep-left (lambda (x ignored) x))
+</code></pre>
 <h2 id="inspect-inferred-types"><a class="header" href="#inspect-inferred-types">Inspect inferred types</a></h2>
 <pre><code class="language-sh">que program.que --emit types
 que explain program.que

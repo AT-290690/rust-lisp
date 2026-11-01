@@ -36,10 +36,10 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-396f8759.js";
+            window.path_to_searchindex_js = "../searchindex-ad3a9f14.js";
         </script>
         <!-- Start loading toc.js asap -->
-        <script src="../toc-af1f57ee.js"></script>
+        <script src="../toc-57000871.js"></script>
     </head>
     <body>
     <div id="mdbook-help-container">
@@ -274,6 +274,10 @@ and project-aware definitions. The repository includes:</p>
 <p>The Neovim integration provides <code>:QueFormat</code> / <code>&lt;Space&gt;f</code> and <code>:QueLib</code> /
 <code>&lt;Space&gt;g</code>. In <code>que nvim</code>, scratch commands include optimized run, debug run,
 WAT, inferred types, <code>explain</code>, expanded source, and library browsing.</p>
+<p>Use <code>que nvim --file program.que</code> to open and edit an existing Calque file.
+The optional permission flags, such as <code>--allow read</code>, are forwarded to its
+run and debug mappings. <code>que nvim</code> and <code>que nvim --code "..."</code> instead open
+disposable scratch buffers.</p>
 <p>See the integration READMEs for installation details and configuration
 examples.</p>
 
