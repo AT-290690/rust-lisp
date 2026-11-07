@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7899c7e0.js";
+            window.path_to_searchindex_js = "../searchindex-782d731f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -192,10 +192,12 @@ table last, including mutating operations:</p>
 (Table/has? "Ada" scores)
 (Table/get "Ada" scores)
 </code></pre>
-<p><code>Table/get</code> returns the table’s entry-vector form. Use <code>Table/get*</code> for a
-checked result or <code>Table/get-unsafe</code> when presence is already established:</p>
-<pre><code class="language-que">(let {found? values} (Table/get* "Ada" scores))
-(if found? (get 0 values) 0)
+<p><code>Table/get</code> returns the table’s entry-vector form. <code>Table/get*</code> returns an
+<code>(Option V)</code> for a checked lookup; use <code>Table/get-unsafe</code> when presence is
+already established:</p>
+<pre><code class="language-que">(match (Table/get* "Ada" scores)
+  None 0
+  (Some score) score)
 
 (if (Table/has? "Ada" scores)
     (Table/get-unsafe "Ada" scores)

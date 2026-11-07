@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7899c7e0.js";
+            window.path_to_searchindex_js = "../searchindex-782d731f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -199,8 +199,9 @@ immediate error.</li>
 <li><code>deserialize</code> needs a concrete expected result type; put <code>sig</code> immediately
 before its binding.</li>
 <li>Use <code>=~</code> rather than <code>=</code> for values from an enum.</li>
-<li><code>Table/get</code> exposes an entry-vector form. Prefer <code>Table/get*</code> or
-<code>Table/get-unsafe</code> after <code>Table/has?</code> if you want a value.</li>
+<li><code>Table/get</code> exposes an entry-vector form. Prefer <code>Table/get*</code> and match on
+<code>None</code>/<code>Some</code>, or use <code>Table/get-unsafe</code> after <code>Table/has?</code> if you want a
+value.</li>
 </ul>
 <h2 id="style"><a class="header" href="#style">Style</a></h2>
 <ul>

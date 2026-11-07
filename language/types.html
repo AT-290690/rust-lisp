@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7899c7e0.js";
+            window.path_to_searchindex_js = "../searchindex-782d731f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -207,6 +207,14 @@ annotation; incompatible uses are errors before Wasm generation.</p>
 <p>Strings are <code>[Char]</code>. This makes string operations ordinary vector-oriented
 operations at the language level; it does <strong>not</strong> mean strings are a packed
 UTF-8 byte array in the current runtime representation.</p>
+<p>The standard library also provides the generic enum <code>(Option T)</code> with <code>None</code>
+and <code>(Some value)</code>. Safe lookups use it to represent a present value or a
+missing one without a sentinel value:</p>
+<pre><code class="language-que">(match (Vector/get* 1 [10 20])
+  None 0
+  (Some value) value)
+; 20
+</code></pre>
 <pre><code class="language-que">(let count 3)              ; Int
 (let ready? true)          ; Bool
 (let title "Calque")       ; [Char]
@@ -228,6 +236,13 @@ the generated accessors, then checks that the value really is that record:</p>
 (+ x y) ; 0
 </code></pre>
 <p>Use <code>_</code> to skip a field: <code>(let (Point x _) origin)</code>.</p>
+<p>Use <code>(field local-name)</code> when the field needs a different local binding—for
+example, because it would collide with a standard function:</p>
+<pre><code class="language-que">(record Pair first Int second Int)
+(let pair (Pair 3 4))
+(let (Pair (first left) (second right)) pair)
+(+ left right) ; 7
+</code></pre>
 <p>The declaration syntax is flat: <code>(record Name field Type ...)</code>. It creates a
 constructor named <code>Name</code> and a typed accessor for every field, named
 <code>Name/field</code>. Fields may use any concrete Calque type, including strings,
@@ -287,7 +302,7 @@ when a <code>sig</code> supplies the expected record type:</p>
 type at the deserialization boundary.</p>
 <pre><code class="language-que">(record Pair T K first T second K)
 (sig restored (Pair Int [Char]))
-(let restored (deserialize "Pair{ first 3 second \"Calque\" }"))
+(let restored (deserialize "Pair{ first 3 second \"Calque\"}"))
 </code></pre>
 <p>Deserialization is strict: missing or malformed numeric fields trap instead of
 silently becoming <code>0</code>.</p>

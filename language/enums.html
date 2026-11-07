@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7899c7e0.js";
+            window.path_to_searchindex_js = "../searchindex-782d731f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -262,12 +262,8 @@ equality; use <code>match</code> to inspect a payload variant.</p>
 <h3 id="parameterized-enums"><a class="header" href="#parameterized-enums">Parameterized enums</a></h3>
 <p>Payload enums can also take type parameters. This makes the type relationship
 between a payload and its enclosing variant explicit without giving up
-exhaustive matching:</p>
-<pre><code class="language-que">(enum Option T
-  None
-  (Some value T))
-
-(let read-or
+exhaustive matching. The standard library defines this common type already:</p>
+<pre><code class="language-que">(let read-or
   (lambda (fallback option)
     (match option
       None fallback

@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7899c7e0.js";
+            window.path_to_searchindex_js = "../searchindex-782d731f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -223,7 +223,8 @@ example</a> shows each of these patterns in runnable code.</p>
 ; 25
 </code></pre>
 <p><code>get</code>, <code>pop-val!</code>, <code>first</code>, and <code>last</code> require a valid value. When an index or
-input length is dynamic, check it with <code>in-bounds?</code> or use <code>Vector/get*</code>.</p>
+input length is dynamic, check it with <code>in-bounds?</code> or use <code>Vector/get*</code>,
+which returns <code>(Option T)</code>.</p>
 <h2 id="core-language-operations"><a class="header" href="#core-language-operations">Core language operations</a></h2>
 <p>The compiler provides vector and tuple primitives: <code>length</code>, <code>get</code>, <code>set!</code>,
 <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>car</code>, <code>cdr</code>, <code>cons</code>,
@@ -256,10 +257,13 @@ such as <code>++</code> and <code>+=</code>, and compile-time helpers such as <c
 <code>unique/char</code>, <code>pairwise</code>, <code>map/adjacent</code>, <code>map/tuple</code>, <code>map/fst</code>, <code>map/snd</code>,
 <code>resolve/option</code>, <code>autocorrect</code>, <code>match?</code>, <code>cartesian-product</code>, and
 <code>neighborhood</code>.</li>
+<li>Safe lookup: <code>get*</code>, <code>at*</code>, and <code>find*</code>. They return <code>(Option T)</code>; match on
+<code>None</code> and <code>(Some value)</code> rather than using a sentinel value.</li>
 </ul>
 <p>The <code>Vector/*</code> namespace supplies regular versions and lower-level helpers:
 <code>Vector/new</code>, <code>Vector/of</code>, <code>Vector/first</code>, <code>Vector/last</code>, <code>Vector/at!</code>,
-<code>Vector/get*</code>, <code>Vector/get-unsafe</code>, <code>Vector/in-bounds?</code>, <code>Vector/set!</code>,
+<code>Vector/get*</code>, <code>Vector/at*</code>, <code>Vector/find*</code>, <code>Vector/get-unsafe</code>,
+<code>Vector/in-bounds?</code>, <code>Vector/set!</code>,
 <code>Vector/push!</code>, <code>Vector/pop!</code>, <code>Vector/pull!</code>, <code>Vector/append!</code>,
 <code>Vector/concat</code>, <code>Vector/cons</code>, <code>Vector/reverse!</code>, <code>Vector/sort!</code>, and
 <code>Vector/swap!</code>. Names ending in <code>/raw</code> are implementation-level variants;

@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-7899c7e0.js";
+            window.path_to_searchindex_js = "../searchindex-782d731f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -237,8 +237,9 @@ loop so the analyser can prove the access.</p>
     (get index xs)
     fallback)
 
-(let {found? values} (Vector/get* index xs))
-(if found? (get 0 values) fallback)
+(match (Vector/get* index xs)
+  None fallback
+  (Some value) value)
 </code></pre>
 <p>Mutation is direct and explicit:</p>
 <pre><code class="language-que">(let xs [10 20])
@@ -364,6 +365,9 @@ true. They exist for <code>map</code>, <code>reduce</code>, and <code>for</code>
 </code></pre>
 <h2 id="search-tests-and-aggregates"><a class="header" href="#search-tests-and-aggregates">Search, tests, and aggregates</a></h2>
 <pre><code class="language-que">(find (lambda (x) (&gt; x 10)) [3 7 12 9]) ; 2, or -1 when absent
+(match (find* (lambda (x) (&gt; x 10)) [3 7 12 9])
+  None -1
+  (Some index) index)                    ; 2
 (count odd? [1 2 3 4])                  ; 2
 (some? odd? [2 4 5])                    ; true
 (every? positive? [1 2 3])              ; true
@@ -497,7 +501,7 @@ they compose naturally with <code>|&gt;</code>.</p>
 (Table/values scores)                     ; [11]
 </code></pre>
 <p><code>Table/get</code> returns the internal matching entry vector; prefer <code>Table/get*</code>
-for a <code>{found? values}</code> result or <code>Table/get-unsafe</code> after a <code>Table/has?</code>
+for a <code>(Option V)</code> result or <code>Table/get-unsafe</code> after a <code>Table/has?</code>
 check. <code>Table/remove!</code>, <code>Table/drop!</code>, <code>Table/merge!</code>, <code>Table/resize!</code>, and
 <code>Table/compact!</code> mutate; <code>Table/keep</code>, <code>Table/omit</code>, and <code>Table/merge</code> return
 new tables. <code>Table/count</code> and <code>Table/frequency</code> build counting tables.</p>

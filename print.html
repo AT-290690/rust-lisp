@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-7899c7e0.js";
+            window.path_to_searchindex_js = "searchindex-782d731f.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-214c4c87.js"></script>
@@ -711,6 +711,14 @@ annotation; incompatible uses are errors before Wasm generation.</p>
 <p>Strings are <code>[Char]</code>. This makes string operations ordinary vector-oriented
 operations at the language level; it does <strong>not</strong> mean strings are a packed
 UTF-8 byte array in the current runtime representation.</p>
+<p>The standard library also provides the generic enum <code>(Option T)</code> with <code>None</code>
+and <code>(Some value)</code>. Safe lookups use it to represent a present value or a
+missing one without a sentinel value:</p>
+<pre><code class="language-que">(match (Vector/get* 1 [10 20])
+  None 0
+  (Some value) value)
+; 20
+</code></pre>
 <pre><code class="language-que">(let count 3)              ; Int
 (let ready? true)          ; Bool
 (let title "Calque")       ; [Char]
@@ -732,6 +740,13 @@ the generated accessors, then checks that the value really is that record:</p>
 (+ x y) ; 0
 </code></pre>
 <p>Use <code>_</code> to skip a field: <code>(let (Point x _) origin)</code>.</p>
+<p>Use <code>(field local-name)</code> when the field needs a different local binding—for
+example, because it would collide with a standard function:</p>
+<pre><code class="language-que">(record Pair first Int second Int)
+(let pair (Pair 3 4))
+(let (Pair (first left) (second right)) pair)
+(+ left right) ; 7
+</code></pre>
 <p>The declaration syntax is flat: <code>(record Name field Type ...)</code>. It creates a
 constructor named <code>Name</code> and a typed accessor for every field, named
 <code>Name/field</code>. Fields may use any concrete Calque type, including strings,
@@ -791,7 +806,7 @@ when a <code>sig</code> supplies the expected record type:</p>
 type at the deserialization boundary.</p>
 <pre><code class="language-que">(record Pair T K first T second K)
 (sig restored (Pair Int [Char]))
-(let restored (deserialize "Pair{ first 3 second \"Calque\" }"))
+(let restored (deserialize "Pair{ first 3 second \"Calque\"}"))
 </code></pre>
 <p>Deserialization is strict: missing or malformed numeric fields trap instead of
 silently becoming <code>0</code>.</p>
@@ -1232,12 +1247,8 @@ equality; use <code>match</code> to inspect a payload variant.</p>
 <h3 id="parameterized-enums"><a class="header" href="#parameterized-enums">Parameterized enums</a></h3>
 <p>Payload enums can also take type parameters. This makes the type relationship
 between a payload and its enclosing variant explicit without giving up
-exhaustive matching:</p>
-<pre><code class="language-que">(enum Option T
-  None
-  (Some value T))
-
-(let read-or
+exhaustive matching. The standard library defines this common type already:</p>
+<pre><code class="language-que">(let read-or
   (lambda (fallback option)
     (match option
       None fallback
@@ -2801,8 +2812,9 @@ loop so the analyser can prove the access.</p>
     (get index xs)
     fallback)
 
-(let {found? values} (Vector/get* index xs))
-(if found? (get 0 values) fallback)
+(match (Vector/get* index xs)
+  None fallback
+  (Some value) value)
 </code></pre>
 <p>Mutation is direct and explicit:</p>
 <pre><code class="language-que">(let xs [10 20])
@@ -2928,6 +2940,9 @@ true. They exist for <code>map</code>, <code>reduce</code>, and <code>for</code>
 </code></pre>
 <h2 id="search-tests-and-aggregates"><a class="header" href="#search-tests-and-aggregates">Search, tests, and aggregates</a></h2>
 <pre><code class="language-que">(find (lambda (x) (&gt; x 10)) [3 7 12 9]) ; 2, or -1 when absent
+(match (find* (lambda (x) (&gt; x 10)) [3 7 12 9])
+  None -1
+  (Some index) index)                    ; 2
 (count odd? [1 2 3 4])                  ; 2
 (some? odd? [2 4 5])                    ; true
 (every? positive? [1 2 3])              ; true
@@ -3061,7 +3076,7 @@ they compose naturally with <code>|&gt;</code>.</p>
 (Table/values scores)                     ; [11]
 </code></pre>
 <p><code>Table/get</code> returns the internal matching entry vector; prefer <code>Table/get*</code>
-for a <code>{found? values}</code> result or <code>Table/get-unsafe</code> after a <code>Table/has?</code>
+for a <code>(Option V)</code> result or <code>Table/get-unsafe</code> after a <code>Table/has?</code>
 check. <code>Table/remove!</code>, <code>Table/drop!</code>, <code>Table/merge!</code>, <code>Table/resize!</code>, and
 <code>Table/compact!</code> mutate; <code>Table/keep</code>, <code>Table/omit</code>, and <code>Table/merge</code> return
 new tables. <code>Table/count</code> and <code>Table/frequency</code> build counting tables.</p>
@@ -3154,7 +3169,8 @@ example</a> shows each of these patterns in runnable code.</p>
 ; 25
 </code></pre>
 <p><code>get</code>, <code>pop-val!</code>, <code>first</code>, and <code>last</code> require a valid value. When an index or
-input length is dynamic, check it with <code>in-bounds?</code> or use <code>Vector/get*</code>.</p>
+input length is dynamic, check it with <code>in-bounds?</code> or use <code>Vector/get*</code>,
+which returns <code>(Option T)</code>.</p>
 <h2 id="core-language-operations"><a class="header" href="#core-language-operations">Core language operations</a></h2>
 <p>The compiler provides vector and tuple primitives: <code>length</code>, <code>get</code>, <code>set!</code>,
 <code>push!</code>, <code>pop!</code>, <code>pop-val!</code>, <code>empty!</code>, <code>capacity!</code>, <code>car</code>, <code>cdr</code>, <code>cons</code>,
@@ -3187,10 +3203,13 @@ such as <code>++</code> and <code>+=</code>, and compile-time helpers such as <c
 <code>unique/char</code>, <code>pairwise</code>, <code>map/adjacent</code>, <code>map/tuple</code>, <code>map/fst</code>, <code>map/snd</code>,
 <code>resolve/option</code>, <code>autocorrect</code>, <code>match?</code>, <code>cartesian-product</code>, and
 <code>neighborhood</code>.</li>
+<li>Safe lookup: <code>get*</code>, <code>at*</code>, and <code>find*</code>. They return <code>(Option T)</code>; match on
+<code>None</code> and <code>(Some value)</code> rather than using a sentinel value.</li>
 </ul>
 <p>The <code>Vector/*</code> namespace supplies regular versions and lower-level helpers:
 <code>Vector/new</code>, <code>Vector/of</code>, <code>Vector/first</code>, <code>Vector/last</code>, <code>Vector/at!</code>,
-<code>Vector/get*</code>, <code>Vector/get-unsafe</code>, <code>Vector/in-bounds?</code>, <code>Vector/set!</code>,
+<code>Vector/get*</code>, <code>Vector/at*</code>, <code>Vector/find*</code>, <code>Vector/get-unsafe</code>,
+<code>Vector/in-bounds?</code>, <code>Vector/set!</code>,
 <code>Vector/push!</code>, <code>Vector/pop!</code>, <code>Vector/pull!</code>, <code>Vector/append!</code>,
 <code>Vector/concat</code>, <code>Vector/cons</code>, <code>Vector/reverse!</code>, <code>Vector/sort!</code>, and
 <code>Vector/swap!</code>. Names ending in <code>/raw</code> are implementation-level variants;
@@ -3322,10 +3341,12 @@ table last, including mutating operations:</p>
 (Table/has? "Ada" scores)
 (Table/get "Ada" scores)
 </code></pre>
-<p><code>Table/get</code> returns the table’s entry-vector form. Use <code>Table/get*</code> for a
-checked result or <code>Table/get-unsafe</code> when presence is already established:</p>
-<pre><code class="language-que">(let {found? values} (Table/get* "Ada" scores))
-(if found? (get 0 values) 0)
+<p><code>Table/get</code> returns the table’s entry-vector form. <code>Table/get*</code> returns an
+<code>(Option V)</code> for a checked lookup; use <code>Table/get-unsafe</code> when presence is
+already established:</p>
+<pre><code class="language-que">(match (Table/get* "Ada" scores)
+  None 0
+  (Some score) score)
 
 (if (Table/has? "Ada" scores)
     (Table/get-unsafe "Ada" scores)
@@ -3811,8 +3832,9 @@ immediate error.</li>
 <li><code>deserialize</code> needs a concrete expected result type; put <code>sig</code> immediately
 before its binding.</li>
 <li>Use <code>=~</code> rather than <code>=</code> for values from an enum.</li>
-<li><code>Table/get</code> exposes an entry-vector form. Prefer <code>Table/get*</code> or
-<code>Table/get-unsafe</code> after <code>Table/has?</code> if you want a value.</li>
+<li><code>Table/get</code> exposes an entry-vector form. Prefer <code>Table/get*</code> and match on
+<code>None</code>/<code>Some</code>, or use <code>Table/get-unsafe</code> after <code>Table/has?</code> if you want a
+value.</li>
 </ul>
 <h2 id="style"><a class="header" href="#style">Style</a></h2>
 <ul>
