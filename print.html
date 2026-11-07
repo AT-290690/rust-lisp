@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-9e7a5466.js";
+            window.path_to_searchindex_js = "searchindex-7899c7e0.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-214c4c87.js"></script>
@@ -703,7 +703,8 @@ annotation; incompatible uses are errors before Wasm generation.</p>
 <tr><td><code>[T]</code></td><td>vector of values of type <code>T</code></td></tr>
 <tr><td><code>{A B}</code></td><td>ordered tuple</td></tr>
 <tr><td><code>A -&gt; B</code></td><td>function from <code>A</code> to <code>B</code></td></tr>
-<tr><td><code>Name</code></td><td>a declared enum or record type</td></tr>
+<tr><td><code>Name</code></td><td>a declared non-generic enum or record type</td></tr>
+<tr><td><code>(Name T K)</code></td><td>an application of a parameterized enum or record type</td></tr>
 </tbody>
 </table>
 </div>
@@ -748,6 +749,25 @@ can be assigned, partially applied, or stored in collections:</p>
 (let get-x Point/x)
 (get-x (make-x 9)) ; 4
 </code></pre>
+<h3 id="parameterized-records"><a class="header" href="#parameterized-records">Parameterized records</a></h3>
+<p>Records can take named type parameters after their name. These are ordinary
+Hindley–Milner type variables: the constructor and accessors are polymorphic,
+while every individual record value has one concrete instantiation.</p>
+<pre><code class="language-que">(record Pair T K first T second K)
+
+(let number-and-name (Pair 7 "Calque"))
+(Pair/first number-and-name)  ; 7
+(Pair/second number-and-name) ; "Calque"
+</code></pre>
+<p>In type annotations, apply the type constructor with parentheses:</p>
+<pre><code class="language-que">(sig swap ((Pair T K) -&gt; (Pair K T)))
+(let swap
+  (lambda (pair)
+    (Pair (Pair/second pair) (Pair/first pair))))
+</code></pre>
+<p><code>T</code> and <code>K</code> are just conventional parameter names; different names denote
+different roles. A generic declaration is nominal, so <code>(Pair Int [Char])</code> is
+still distinct from a tuple <code>{Int [Char]}</code>.</p>
 <p>A record owns its managed fields. The runtime retains vector, tuple, record,
 and function fields on construction when necessary and releases them when the
 record’s final reference is gone. Known ownership cycles involving a closure
@@ -766,6 +786,12 @@ when a <code>sig</code> supplies the expected record type:</p>
 (let saved (serialize (Point 3 4)))
 (sig restored Point)
 (let restored (deserialize saved))
+</code></pre>
+<p>The same applies to a parameterized record: provide its fully instantiated
+type at the deserialization boundary.</p>
+<pre><code class="language-que">(record Pair T K first T second K)
+(sig restored (Pair Int [Char]))
+(let restored (deserialize "Pair{ first 3 second \"Calque\" }"))
 </code></pre>
 <p>Deserialization is strict: missing or malformed numeric fields trap instead of
 silently becoming <code>0</code>.</p>
@@ -1203,6 +1229,34 @@ cycles are not: a tree may own its children, while a cycle such as <code>a → b
 is rejected by Calque’s RC-cycle checks.</p>
 <p><code>=~</code> remains useful for zero-payload state enums. It is not structural payload
 equality; use <code>match</code> to inspect a payload variant.</p>
+<h3 id="parameterized-enums"><a class="header" href="#parameterized-enums">Parameterized enums</a></h3>
+<p>Payload enums can also take type parameters. This makes the type relationship
+between a payload and its enclosing variant explicit without giving up
+exhaustive matching:</p>
+<pre><code class="language-que">(enum Option T
+  None
+  (Some value T))
+
+(let read-or
+  (lambda (fallback option)
+    (match option
+      None fallback
+      (Some value) value)))
+
+{(read-or 0 (Some 4))
+ (read-or "none" (Some "Calque"))}
+; {4 "Calque"}
+</code></pre>
+<p>Use the applied form in annotations: <code>(Option Int)</code>, <code>(Option [Char])</code>, or a
+generic relationship such as <code>(Option T)</code>. Recursive generic enums work the
+same way:</p>
+<pre><code class="language-que">(enum Tree T
+  Empty
+  (Node value T left (Tree T) right (Tree T)))
+</code></pre>
+<p>Every use chooses one payload type. <code>(Some 1)</code> and <code>(Some "one")</code> can coexist
+in a program, but they have different types: <code>(Option Int)</code> and
+<code>(Option [Char])</code>.</p>
 <p>Payload enums are also valid <code>Table</code> keys. Their tag and fields are hashed and
 compared structurally, including nested payload enums, vectors, tuples, and
 records:</p>
@@ -1220,12 +1274,12 @@ table.</p>
 <p>Payload enums use an explicit, readable recursive format. <code>serialize</code> writes
 the enum type, variant, and each field; <code>deserialize</code> validates that exact
 shape against the concrete type supplied by <code>sig</code>:</p>
-<pre><code class="language-que">(enum Tree Empty (Node value Int left Tree right Tree))
+<pre><code class="language-que">(enum Tree T Empty (Node value T left (Tree T) right (Tree T)))
 
 (let saved (serialize (Node 4 Empty Empty)))
 ; Tree{ Node 4 Tree{ Empty } Tree{ Empty } }
 
-(sig restored Tree)
+(sig restored (Tree Int))
 (let restored (deserialize saved))
 </code></pre>
 <p>Malformed text, an unknown variant, or a missing field is an error. Recursive
@@ -3697,7 +3751,8 @@ que --lib source Vector/sort!
 (alter! name value)
 (letrec name (lambda (args) body))
 (sig name Type)
-(enum Name Variant... (PayloadVariant field Type ...))
+(enum Name [T K ...] Variant... (PayloadVariant field Type ...))
+(record Name [T K ...] field Type ...)
 </code></pre>
 <h2 id="control"><a class="header" href="#control">Control</a></h2>
 <pre><code class="language-que">(if test yes no)

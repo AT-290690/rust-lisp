@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-9e7a5466.js";
+            window.path_to_searchindex_js = "../searchindex-7899c7e0.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -188,7 +188,8 @@
 (alter! name value)
 (letrec name (lambda (args) body))
 (sig name Type)
-(enum Name Variant... (PayloadVariant field Type ...))
+(enum Name [T K ...] Variant... (PayloadVariant field Type ...))
+(record Name [T K ...] field Type ...)
 </code></pre>
 <h2 id="control"><a class="header" href="#control">Control</a></h2>
 <pre><code class="language-que">(if test yes no)
