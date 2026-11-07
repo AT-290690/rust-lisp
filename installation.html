@@ -36,7 +36,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-27ff743a.js";
+            window.path_to_searchindex_js = "searchindex-9e7a5466.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-214c4c87.js"></script>
@@ -229,7 +229,17 @@ quelsp --help
 </code></pre>
 <p>The VS Code extension uses <code>quelsp</code> from <code>PATH</code> by default. To choose a
 specific executable, set <code>que.languageServer.path</code> to its full path. The
-included Neovim integration also looks for <code>quelsp</code> on <code>PATH</code>.</p>
+included Neovim and Emacs integrations also look for <code>quelsp</code> on <code>PATH</code>.</p>
+<h3 id="emacs"><a class="header" href="#emacs">Emacs</a></h3>
+<p>Emacs 29.1+ is supported through the built-in Eglot client. The mode supplies
+Calque syntax highlighting, indentation, formatting, run commands, and Eglot
+diagnostics, inferred-type hover, completion, signatures, and definitions.</p>
+<pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install-emacs.sh | bash
+</code></pre>
+<p>Then add the printed <code>load-path</code> and <code>(require 'que-mode)</code> forms to your Emacs
+init file. The installer does not rewrite an existing init file. See
+<a href="https://github.com/AT-290690/que-script/blob/main/miscs/emacs/README.md"><code>miscs/emacs/README.md</code></a>
+for configuration and command bindings.</p>
 <p>For the managed Neovim workstation on a fresh Linux machine—Calque, <code>quelsp</code>,
 Wasmtime, Neovim, Telescope, Catppuccin, and the Calque setup—use:</p>
 <pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install-all-linux.sh | bash

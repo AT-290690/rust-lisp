@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-27ff743a.js";
+            window.path_to_searchindex_js = "../searchindex-9e7a5466.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -182,7 +182,8 @@
                 <div id="mdbook-content" class="content">
                     <main>
                         <h1 id="enums-and-matching"><a class="header" href="#enums-and-matching">Enums and matching</a></h1>
-<p>An <code>enum</code> declares a closed set of zero-payload values:</p>
+<p>An <code>enum</code> declares a closed set of variants. A zero-payload enum is the most
+compact form:</p>
 <pre><code class="language-que">(enum Shape Rock Paper Scissors)
 </code></pre>
 <p><code>Rock</code>, <code>Paper</code>, and <code>Scissors</code> have type <code>Shape</code>; they are not <code>Int</code> values
@@ -233,8 +234,60 @@ compared directly—there is no conversion to a string:</p>
 (Table/set! Rock 1 points)
 (Table/set! Paper 2 points)
 </code></pre>
-<p>Current enums have no payload variants. <code>match/string</code> remains available for
-the older string-dispatch macro use case.</p>
+<h2 id="payload-and-recursive-variants"><a class="header" href="#payload-and-recursive-variants">Payload and recursive variants</a></h2>
+<p>A parenthesized variant declares named payload fields. This is how to model
+trees, linked values, ASTs, and other recursive data:</p>
+<pre><code class="language-que">(enum Tree
+  Empty
+  (Node value Int left Tree right Tree))
+
+(let tree (Node 4 (Node 2 Empty Empty) (Node 7 Empty Empty)))
+
+(letrec size
+  (lambda (tree)
+    (match tree
+      Empty 0
+      (Node value left right)
+        (+ 1 (+ (size left) (size right))))))
+
+(size tree) ; 3
+</code></pre>
+<p>The payload binding count must match the variant declaration. Payload enums
+are boxed and reference-counted; plain zero-payload enums remain immediate
+<code>i32</code> tags. Recursive <em>types</em> are therefore fine, but managed ownership
+cycles are not: a tree may own its children, while a cycle such as <code>a → b → a</code>
+is rejected by Calque’s RC-cycle checks.</p>
+<p><code>=~</code> remains useful for zero-payload state enums. It is not structural payload
+equality; use <code>match</code> to inspect a payload variant.</p>
+<p>Payload enums are also valid <code>Table</code> keys. Their tag and fields are hashed and
+compared structurally, including nested payload enums, vectors, tuples, and
+records:</p>
+<pre><code class="language-que">(let table (Table/new))
+(Table/set! (Node 1 Empty Empty) "stored" table)
+(Table/get (Node 1 Empty Empty) table)
+</code></pre>
+<p>The same rule applies to a payload such as <code>(Named ["calque" "lisp"])</code>: a
+separately allocated value with the same nested text is the same key. Tuples
+and records can also be used directly as structural <code>Table</code> keys.</p>
+<p>Like existing <code>[Char]</code> keys, do not mutate a managed value after using it as a
+key: changing its contents can change its hash and make it unreachable in the
+table.</p>
+<h2 id="serialize-payload-enums"><a class="header" href="#serialize-payload-enums">Serialize payload enums</a></h2>
+<p>Payload enums use an explicit, readable recursive format. <code>serialize</code> writes
+the enum type, variant, and each field; <code>deserialize</code> validates that exact
+shape against the concrete type supplied by <code>sig</code>:</p>
+<pre><code class="language-que">(enum Tree Empty (Node value Int left Tree right Tree))
+
+(let saved (serialize (Node 4 Empty Empty)))
+; Tree{ Node 4 Tree{ Empty } Tree{ Empty } }
+
+(sig restored Tree)
+(let restored (deserialize saved))
+</code></pre>
+<p>Malformed text, an unknown variant, or a missing field is an error. Recursive
+payloads are decoded recursively, so this format also round-trips ordinary
+trees and ASTs without a separate schema.</p>
+<p><code>match/string</code> remains available for the older string-dispatch macro use case.</p>
 
                     </main>
 

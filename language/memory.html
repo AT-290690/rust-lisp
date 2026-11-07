@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-27ff743a.js";
+            window.path_to_searchindex_js = "../searchindex-9e7a5466.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -192,7 +192,7 @@ immediately by the runtime allocator. The optimizer can also transfer a fresh
 value directly to its final owner, or release a value after its last use, which
 avoids needless retain/release traffic.</p>
 <h2 id="what-is-managed"><a class="header" href="#what-is-managed">What is managed</a></h2>
-<p><code>Int</code>, <code>Dec</code>, <code>Bool</code>, <code>Char</code>, unit, and enum tags are immediate <code>i32</code> values.
+<p><code>Int</code>, <code>Dec</code>, <code>Bool</code>, <code>Char</code>, unit, and zero-payload enum tags are immediate <code>i32</code> values. Payload enums are boxed managed values.
 They do not allocate and do not participate in reference counting.</p>
 <p>Vectors, strings (<code>[Char]</code>), tuples containing managed values, and closures
 are managed heap values. The rule is implementation detail, not an operation

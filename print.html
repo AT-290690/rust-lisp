@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-27ff743a.js";
+            window.path_to_searchindex_js = "searchindex-9e7a5466.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-214c4c87.js"></script>
@@ -280,7 +280,17 @@ quelsp --help
 </code></pre>
 <p>The VS Code extension uses <code>quelsp</code> from <code>PATH</code> by default. To choose a
 specific executable, set <code>que.languageServer.path</code> to its full path. The
-included Neovim integration also looks for <code>quelsp</code> on <code>PATH</code>.</p>
+included Neovim and Emacs integrations also look for <code>quelsp</code> on <code>PATH</code>.</p>
+<h3 id="emacs"><a class="header" href="#emacs">Emacs</a></h3>
+<p>Emacs 29.1+ is supported through the built-in Eglot client. The mode supplies
+Calque syntax highlighting, indentation, formatting, run commands, and Eglot
+diagnostics, inferred-type hover, completion, signatures, and definitions.</p>
+<pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install-emacs.sh | bash
+</code></pre>
+<p>Then add the printed <code>load-path</code> and <code>(require 'que-mode)</code> forms to your Emacs
+init file. The installer does not rewrite an existing init file. See
+<a href="https://github.com/AT-290690/que-script/blob/main/miscs/emacs/README.md"><code>miscs/emacs/README.md</code></a>
+for configuration and command bindings.</p>
 <p>For the managed Neovim workstation on a fresh Linux machine—Calque, <code>quelsp</code>,
 Wasmtime, Neovim, Telescope, Catppuccin, and the Calque setup—use:</p>
 <pre><code class="language-sh">curl -fsSL https://raw.githubusercontent.com/AT-290690/que-script/main/scripts/install-all-linux.sh | bash
@@ -693,7 +703,7 @@ annotation; incompatible uses are errors before Wasm generation.</p>
 <tr><td><code>[T]</code></td><td>vector of values of type <code>T</code></td></tr>
 <tr><td><code>{A B}</code></td><td>ordered tuple</td></tr>
 <tr><td><code>A -&gt; B</code></td><td>function from <code>A</code> to <code>B</code></td></tr>
-<tr><td><code>Name</code></td><td>a declared enum type</td></tr>
+<tr><td><code>Name</code></td><td>a declared enum or record type</td></tr>
 </tbody>
 </table>
 </div>
@@ -705,6 +715,60 @@ UTF-8 byte array in the current runtime representation.</p>
 (let title "Calque")       ; [Char]
 (let pair {count title})   ; {Int [Char]}
 </code></pre>
+<h2 id="records"><a class="header" href="#records">Records</a></h2>
+<p><code>record</code> declares a named, nominal fixed-field product type. Unlike a tuple,
+a record carries its declared identity: a raw <code>{Int Int}</code> tuple cannot be used
+where a <code>Point</code> is required, even if its elements have the same types.</p>
+<pre><code class="language-que">(record Point x Int y Int)
+
+(let origin (Point 0 0))
+(Point/x origin) ; 0
+(Point/y origin) ; 0
+</code></pre>
+<p>Destructure by naming the record and its fields. The compiler expands this to
+the generated accessors, then checks that the value really is that record:</p>
+<pre><code class="language-que">(let (Point x y) origin)
+(+ x y) ; 0
+</code></pre>
+<p>Use <code>_</code> to skip a field: <code>(let (Point x _) origin)</code>.</p>
+<p>The declaration syntax is flat: <code>(record Name field Type ...)</code>. It creates a
+constructor named <code>Name</code> and a typed accessor for every field, named
+<code>Name/field</code>. Fields may use any concrete Calque type, including strings,
+vectors, tuples, other already-declared records, and functions. Records work
+in vectors and functions:</p>
+<pre><code class="language-que">(record Message title [Char] tags [[Char]] count Int)
+(let message (Message "Calque" ["typed" "lisp"] 2))
+(Message/title message) ; "Calque"
+</code></pre>
+<p>Constructors and accessors are ordinary first-class, curried functions. They
+can be assigned, partially applied, or stored in collections:</p>
+<pre><code class="language-que">(record Point x Int y Int)
+(let make Point)
+(let make-x (make 4))
+(let get-x Point/x)
+(get-x (make-x 9)) ; 4
+</code></pre>
+<p>A record owns its managed fields. The runtime retains vector, tuple, record,
+and function fields on construction when necessary and releases them when the
+record’s final reference is gone. Known ownership cycles involving a closure
+stored through a record are rejected by the same compile-time RC-cycle check
+used for vectors.</p>
+<p>Records are nominal now; their future packed <code>Vector&lt;Record&gt;</code> representation
+is a separate storage optimization. Do not rely on the current implementation
+layout as an FFI ABI.</p>
+<p>An individual record uses one runtime allocation: its fixed fields and the
+small ownership bitmap for managed fields are stored inline with its header.
+Boxed payload-enum values use the same compact layout. This is an internal
+runtime detail, not an FFI ABI guarantee.</p>
+<p>Records serialize with their type and field names, and can be deserialized
+when a <code>sig</code> supplies the expected record type:</p>
+<pre><code class="language-que">(record Point x Int y Int)
+(let saved (serialize (Point 3 4)))
+(sig restored Point)
+(let restored (deserialize saved))
+</code></pre>
+<p>Deserialization is strict: missing or malformed numeric fields trap instead of
+silently becoming <code>0</code>.</p>
 <h2 id="numeric-types"><a class="header" href="#numeric-types">Numeric types</a></h2>
 <p><code>Int</code> does not silently become <code>Dec</code>. Use the decimal operators (<code>+.</code>, <code>-.</code>,
 <code>*.</code>, <code>/.</code>) and conversions such as <code>Int-&gt;Dec</code> / <code>Dec-&gt;Int</code> when crossing the
@@ -739,7 +803,7 @@ diagnostics than a presentation of the algorithm that only returns a type.</p>
 <p>The notation below is useful when reading an inferred type or a compiler
 diagnostic:</p>
 <pre><code class="language-text">τ ::= Int | Dec | Bool | Char | () | α
-    | [τ] | {τ τ} | τ -&gt; τ | EnumName
+    | [τ] | {τ τ} | τ -&gt; τ | EnumName | RecordName
 
 σ ::= ∀α₁ … αₙ. τ
 Γ ⊢ e : τ
@@ -794,6 +858,9 @@ belong to that one named type. Its compact runtime <code>i32</code> tag does not
 an <code>Int</code> at the language level. <code>=~</code> requires both operands to have the same
 enum type, and <code>match</code> checks coverage of that closed variant set. See <a href="#enums-and-matching">Enums
 and matching</a>.</p>
+<p><strong>Records are nominal product types.</strong> A record declaration fixes both its
+field names and field order. The type checker never treats a tuple with the
+same field types as that record, which prevents accidental field-order bugs.</p>
 <h3 id="mutation-and-the-value-restriction"><a class="header" href="#mutation-and-the-value-restriction">Mutation and the value restriction</a></h3>
 <p>Plain HM generalizes every suitable <code>let</code>. That is unsound in the presence of
 mutable containers: if an empty vector were independently polymorphic at each
@@ -1059,7 +1126,8 @@ que --lib types 'split*'
 </code></pre>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="enums-and-matching"><a class="header" href="#enums-and-matching">Enums and matching</a></h1>
-<p>An <code>enum</code> declares a closed set of zero-payload values:</p>
+<p>An <code>enum</code> declares a closed set of variants. A zero-payload enum is the most
+compact form:</p>
 <pre><code class="language-que">(enum Shape Rock Paper Scissors)
 </code></pre>
 <p><code>Rock</code>, <code>Paper</code>, and <code>Scissors</code> have type <code>Shape</code>; they are not <code>Int</code> values
@@ -1110,8 +1178,60 @@ compared directly—there is no conversion to a string:</p>
 (Table/set! Rock 1 points)
 (Table/set! Paper 2 points)
 </code></pre>
-<p>Current enums have no payload variants. <code>match/string</code> remains available for
-the older string-dispatch macro use case.</p>
+<h2 id="payload-and-recursive-variants"><a class="header" href="#payload-and-recursive-variants">Payload and recursive variants</a></h2>
+<p>A parenthesized variant declares named payload fields. This is how to model
+trees, linked values, ASTs, and other recursive data:</p>
+<pre><code class="language-que">(enum Tree
+  Empty
+  (Node value Int left Tree right Tree))
+
+(let tree (Node 4 (Node 2 Empty Empty) (Node 7 Empty Empty)))
+
+(letrec size
+  (lambda (tree)
+    (match tree
+      Empty 0
+      (Node value left right)
+        (+ 1 (+ (size left) (size right))))))
+
+(size tree) ; 3
+</code></pre>
+<p>The payload binding count must match the variant declaration. Payload enums
+are boxed and reference-counted; plain zero-payload enums remain immediate
+<code>i32</code> tags. Recursive <em>types</em> are therefore fine, but managed ownership
+cycles are not: a tree may own its children, while a cycle such as <code>a → b → a</code>
+is rejected by Calque’s RC-cycle checks.</p>
+<p><code>=~</code> remains useful for zero-payload state enums. It is not structural payload
+equality; use <code>match</code> to inspect a payload variant.</p>
+<p>Payload enums are also valid <code>Table</code> keys. Their tag and fields are hashed and
+compared structurally, including nested payload enums, vectors, tuples, and
+records:</p>
+<pre><code class="language-que">(let table (Table/new))
+(Table/set! (Node 1 Empty Empty) "stored" table)
+(Table/get (Node 1 Empty Empty) table)
+</code></pre>
+<p>The same rule applies to a payload such as <code>(Named ["calque" "lisp"])</code>: a
+separately allocated value with the same nested text is the same key. Tuples
+and records can also be used directly as structural <code>Table</code> keys.</p>
+<p>Like existing <code>[Char]</code> keys, do not mutate a managed value after using it as a
+key: changing its contents can change its hash and make it unreachable in the
+table.</p>
+<h2 id="serialize-payload-enums"><a class="header" href="#serialize-payload-enums">Serialize payload enums</a></h2>
+<p>Payload enums use an explicit, readable recursive format. <code>serialize</code> writes
+the enum type, variant, and each field; <code>deserialize</code> validates that exact
+shape against the concrete type supplied by <code>sig</code>:</p>
+<pre><code class="language-que">(enum Tree Empty (Node value Int left Tree right Tree))
+
+(let saved (serialize (Node 4 Empty Empty)))
+; Tree{ Node 4 Tree{ Empty } Tree{ Empty } }
+
+(sig restored Tree)
+(let restored (deserialize saved))
+</code></pre>
+<p>Malformed text, an unknown variant, or a missing field is an error. Recursive
+payloads are decoded recursively, so this format also round-trips ordinary
+trees and ASTs without a separate schema.</p>
+<p><code>match/string</code> remains available for the older string-dispatch macro use case.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="mutation-and-capacity"><a class="header" href="#mutation-and-capacity">Mutation and capacity</a></h1>
 <p>Mutation is explicit in both spelling and type/effect analysis. Use it for
@@ -1166,7 +1286,7 @@ immediately by the runtime allocator. The optimizer can also transfer a fresh
 value directly to its final owner, or release a value after its last use, which
 avoids needless retain/release traffic.</p>
 <h2 id="what-is-managed"><a class="header" href="#what-is-managed">What is managed</a></h2>
-<p><code>Int</code>, <code>Dec</code>, <code>Bool</code>, <code>Char</code>, unit, and enum tags are immediate <code>i32</code> values.
+<p><code>Int</code>, <code>Dec</code>, <code>Bool</code>, <code>Char</code>, unit, and zero-payload enum tags are immediate <code>i32</code> values. Payload enums are boxed managed values.
 They do not allocate and do not participate in reference counting.</p>
 <p>Vectors, strings (<code>[Char]</code>), tuples containing managed values, and closures
 are managed heap values. The rule is implementation detail, not an operation
@@ -1969,7 +2089,7 @@ they are not dynamically typed escape hatches.</p>
 <div style="break-before: page; page-break-before: always;"></div>
 <h1 id="webassembly-target"><a class="header" href="#webassembly-target">WebAssembly target</a></h1>
 <p>Calque lowers its typed AST into WebAssembly. Core scalar values fit the Wasm
-<code>i32</code> model: <code>Int</code>, <code>Bool</code>, <code>Char</code>, enum tags, <code>Dec</code>, and unit all have compact
+<code>i32</code> model: <code>Int</code>, <code>Bool</code>, <code>Char</code>, zero-payload enum tags, <code>Dec</code>, and unit all have compact
 scalar lowering. Managed collections and closures use the runtime’s reference
 counted representation.</p>
 <img class="explanatory-diagram" src="images/compiler-pipeline.svg" alt="Calque source through parsing, macros, inference, analysis, optimization, WAT, Wasm, and two execution paths">
@@ -2001,6 +2121,10 @@ compiler. It is deliberately separate from the main <code>que</code> command:</p
 <p>This is useful for completed compute-heavy programs and native benchmarking.
 It is not a different source language: static typing, macro expansion, and
 Wasm generation occur first in the same compiler.</p>
+<p><code>serialize</code> and <code>deserialize</code> also stay in the generated guest Wasm on this
+path. Their record and payload-enum format is therefore the same under
+Wasmtime and under wasm2c/native C. The native wrapper uses that codec for a
+program’s final result too, including direct record and payload-enum returns.</p>
 <p>For the debug/optimized safety boundary and a release checklist, see <a href="#debug-optimized-and-native-execution">Debug,
 optimized, and native execution</a>.</p>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -2299,6 +2423,7 @@ together rather than spreading them across lines.</p>
 and project-aware definitions. The repository includes:</p>
 <ul>
 <li>a thin Neovim plugin in <code>miscs/neovim</code></li>
+<li>an Emacs 29.1+ mode with built-in Eglot support in <code>miscs/emacs</code></li>
 <li>a VS Code extension in <code>miscs/extension/que-lang</code></li>
 </ul>
 <p>The Neovim integration provides <code>:QueFormat</code> / <code>&lt;Space&gt;f</code> and <code>:QueLib</code> /
@@ -2308,6 +2433,9 @@ WAT, inferred types, <code>explain</code>, expanded source, and library browsing
 The optional permission flags, such as <code>--allow read</code>, are forwarded to its
 run and debug mappings. <code>que nvim</code> and <code>que nvim --code "..."</code> instead open
 disposable scratch buffers.</p>
+<p>In Emacs, <code>que-mode</code> starts Eglot automatically when <code>quelsp</code> is on <code>PATH</code>.
+Its buffer-local bindings are <code>C-c C-f</code> (format), <code>C-c C-r</code> (optimized run),
+<code>C-c C-d</code> (debug run), <code>C-c C-w</code> (WAT), and <code>C-c C-e</code> (<code>explain</code>).</p>
 <p>See the integration READMEs for installation details and configuration
 examples.</p>
 <div style="break-before: page; page-break-before: always;"></div>
@@ -3401,8 +3529,8 @@ table keys.</p>
 
 (sig points [[{ Shape Int }]])
 (let points (Table/new))
-(Table/set! points Rock 1)
-(Table/set! points Scissors 2)
+(Table/set! Rock 1 points)
+(Table/set! Scissors 2 points)
 
 (let text (serialize points))
 
@@ -3569,7 +3697,7 @@ que --lib source Vector/sort!
 (alter! name value)
 (letrec name (lambda (args) body))
 (sig name Type)
-(enum Name Variant...)
+(enum Name Variant... (PayloadVariant field Type ...))
 </code></pre>
 <h2 id="control"><a class="header" href="#control">Control</a></h2>
 <pre><code class="language-que">(if test yes no)

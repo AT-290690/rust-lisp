@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-27ff743a.js";
+            window.path_to_searchindex_js = "../searchindex-9e7a5466.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -269,6 +269,7 @@ together rather than spreading them across lines.</p>
 and project-aware definitions. The repository includes:</p>
 <ul>
 <li>a thin Neovim plugin in <code>miscs/neovim</code></li>
+<li>an Emacs 29.1+ mode with built-in Eglot support in <code>miscs/emacs</code></li>
 <li>a VS Code extension in <code>miscs/extension/que-lang</code></li>
 </ul>
 <p>The Neovim integration provides <code>:QueFormat</code> / <code>&lt;Space&gt;f</code> and <code>:QueLib</code> /
@@ -278,6 +279,9 @@ WAT, inferred types, <code>explain</code>, expanded source, and library browsing
 The optional permission flags, such as <code>--allow read</code>, are forwarded to its
 run and debug mappings. <code>que nvim</code> and <code>que nvim --code "..."</code> instead open
 disposable scratch buffers.</p>
+<p>In Emacs, <code>que-mode</code> starts Eglot automatically when <code>quelsp</code> is on <code>PATH</code>.
+Its buffer-local bindings are <code>C-c C-f</code> (format), <code>C-c C-r</code> (optimized run),
+<code>C-c C-d</code> (debug run), <code>C-c C-w</code> (WAT), and <code>C-c C-e</code> (<code>explain</code>).</p>
 <p>See the integration READMEs for installation details and configuration
 examples.</p>
 
