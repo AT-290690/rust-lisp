@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-782d731f.js";
+            window.path_to_searchindex_js = "../searchindex-d8344352.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -529,12 +529,22 @@ and <code>Que/prepend!</code> to add at either end; <code>Que/pop!</code> and <c
 (Matrix/in-bounds? 1 2 matrix)            ; true
 </code></pre>
 <h2 id="big-integers-dates-metadata-and-options"><a class="header" href="#big-integers-dates-metadata-and-options">Big integers, dates, metadata, and options</a></h2>
-<p><code>BigInt/*</code> represents an unsigned arbitrary-precision integer as a digit
-vector; <code>SignedBigInt/*</code> uses <code>{Bool [Int]}</code>. Construct them from text and
-stay within the corresponding namespace for arithmetic:</p>
+<p><code>BigInt</code> is a nominal record containing an unsigned arbitrary-precision digit
+sequence. <code>SignedBigInt</code> is a nominal record around a sign and a <code>BigInt</code>;
+<code>StructBigDec</code> adds an explicit decimal precision. Construct values through
+their namespaces and keep arithmetic there rather than passing raw digit
+vectors:</p>
 <pre><code class="language-que">(let a (BigInt/new "999999999999999999"))
-(Digits-&gt;Chars (BigInt/add a (BigInt/new "1")))
+(Digits-&gt;Chars (BigInt/digits (BigInt/add a (BigInt/new "1"))))
 ; "1000000000000000000"
+</code></pre>
+<pre><code class="language-que">(SignedBigInt-&gt;String
+  (SignedBigInt/add (SignedBigInt/new "-25") (SignedBigInt/new "7")))
+; "-18"
+
+(StructBigDec-&gt;String
+  (StructBigDec/new-digits false (BigInt [3]) (BigInt [1 4])))
+; "3.14"
 </code></pre>
 <p><code>Date/iso-&gt;Vector</code>, <code>Date/iso-z-&gt;Vector</code>, <code>Date/year</code>, <code>Date/month</code>,
 <code>Date/day</code>, and <code>Date/hour</code> work with the library’s date-vector representation.

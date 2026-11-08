@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-782d731f.js";
+            window.path_to_searchindex_js = "searchindex-d8344352.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-214c4c87.js"></script>
@@ -719,6 +719,20 @@ missing one without a sentinel value:</p>
   (Some value) value)
 ; 20
 </code></pre>
+<p>For operations that need to report <em>why</em> they failed, use the generic
+<code>(Result T E)</code> enum. <code>Result/ok</code> carries a successful <code>T</code>; <code>Result/err</code>
+carries an error value <code>E</code>:</p>
+<pre><code class="language-que">(let divide
+  (lambda (numerator denominator)
+    (if (= denominator 0)
+      (Result/err "division by zero")
+      (Result/ok (/ numerator denominator)))))
+
+(match (divide 12 3)
+  (Result/ok value) value
+  (Result/err message) 0)
+; 4
+</code></pre>
 <pre><code class="language-que">(let count 3)              ; Int
 (let ready? true)          ; Bool
 (let title "Calque")       ; [Char]
@@ -1268,6 +1282,46 @@ same way:</p>
 <p>Every use chooses one payload type. <code>(Some 1)</code> and <code>(Some "one")</code> can coexist
 in a program, but they have different types: <code>(Option Int)</code> and
 <code>(Option [Char])</code>.</p>
+<h3 id="typed-choices-without-overloads"><a class="header" href="#typed-choices-without-overloads">Typed choices without overloads</a></h3>
+<p>Parameterized enums are also useful when an API needs a choice that must stay
+connected to the type of another argument. Calque functions are not overloaded
+by argument type: one function has one type. Put the type-dependent operation
+in a generic enum instead.</p>
+<p>For example, an ordering holds the comparison function for one element type:</p>
+<pre><code class="language-que">(enum SortOrder T
+  (Asc compare (T -&gt; T -&gt; Bool))
+  (Desc compare (T -&gt; T -&gt; Bool)))
+
+(sig sort-ord ((SortOrder T) -&gt; [T] -&gt; [T]))
+(let sort-ord
+  (lambda (order values)
+    (match order
+      (Asc compare) (sort compare values)
+      (Desc compare) (sort compare values))))
+
+(sig Asc/Int (SortOrder Int))
+(let Asc/Int (Asc &lt;))
+
+(sig Desc/Int (SortOrder Int))
+(let Desc/Int (Desc &gt;))
+
+(sig Asc/Dec (SortOrder Dec))
+(let Asc/Dec (Asc &lt;.))
+
+(sort-ord Asc/Int [3 1 2])
+; [1 2 3]
+
+(sort-ord Desc/Int [3 1 2])
+; [3 2 1]
+
+(sort-ord Asc/Dec [3.2 1.1 2.4])
+; [1.1 2.4 3.2]
+</code></pre>
+<p><code>sort-ord</code> is one polymorphic function, not separate Int and Dec overloads.
+The signature ties the <code>T</code> inside <code>(SortOrder T)</code> to the element type of
+<code>[T]</code>, so <code>(sort-ord Asc/Int [1.2 2.4])</code> is a type error. The named values
+<code>Asc/Int</code> and <code>Asc/Dec</code> are ordinary bindings; an enum variant name does not
+need to encode the concrete type.</p>
 <p>Payload enums are also valid <code>Table</code> keys. Their tag and fields are hashed and
 compared structurally, including nested payload enums, vectors, tuples, and
 records:</p>
@@ -3104,12 +3158,22 @@ and <code>Que/prepend!</code> to add at either end; <code>Que/pop!</code> and <c
 (Matrix/in-bounds? 1 2 matrix)            ; true
 </code></pre>
 <h2 id="big-integers-dates-metadata-and-options"><a class="header" href="#big-integers-dates-metadata-and-options">Big integers, dates, metadata, and options</a></h2>
-<p><code>BigInt/*</code> represents an unsigned arbitrary-precision integer as a digit
-vector; <code>SignedBigInt/*</code> uses <code>{Bool [Int]}</code>. Construct them from text and
-stay within the corresponding namespace for arithmetic:</p>
+<p><code>BigInt</code> is a nominal record containing an unsigned arbitrary-precision digit
+sequence. <code>SignedBigInt</code> is a nominal record around a sign and a <code>BigInt</code>;
+<code>StructBigDec</code> adds an explicit decimal precision. Construct values through
+their namespaces and keep arithmetic there rather than passing raw digit
+vectors:</p>
 <pre><code class="language-que">(let a (BigInt/new "999999999999999999"))
-(Digits-&gt;Chars (BigInt/add a (BigInt/new "1")))
+(Digits-&gt;Chars (BigInt/digits (BigInt/add a (BigInt/new "1"))))
 ; "1000000000000000000"
+</code></pre>
+<pre><code class="language-que">(SignedBigInt-&gt;String
+  (SignedBigInt/add (SignedBigInt/new "-25") (SignedBigInt/new "7")))
+; "-18"
+
+(StructBigDec-&gt;String
+  (StructBigDec/new-digits false (BigInt [3]) (BigInt [1 4])))
+; "3.14"
 </code></pre>
 <p><code>Date/iso-&gt;Vector</code>, <code>Date/iso-z-&gt;Vector</code>, <code>Date/year</code>, <code>Date/month</code>,
 <code>Date/day</code>, and <code>Date/hour</code> work with the library’s date-vector representation.
@@ -3265,8 +3329,11 @@ kernels.</li>
 <h2 id="specialist-representations"><a class="header" href="#specialist-representations">Specialist representations</a></h2>
 <p><code>BigInt/*</code> implements unsigned arbitrary-precision arithmetic, including
 <code>new</code>, <code>add</code>, <code>sub</code>, <code>mul</code>, <code>div</code>, <code>mod</code>, comparisons, <code>pow</code>, <code>square</code>,
-<code>sum</code>, <code>product</code>, and <code>range</code>. <code>SignedBigInt/*</code> supplies the corresponding
-signed representation. <code>Date/*</code> extracts pieces of the date-vector format;
+<code>sum</code>, <code>product</code>, and <code>range</code>. <code>BigInt</code> is a nominal record around its digit
+storage, so it cannot be confused with an ordinary <code>[Int]</code>. <code>SignedBigInt/*</code>
+supplies the corresponding nominal signed representation, and
+<code>StructBigDec/*</code> supplies arbitrary-precision decimal arithmetic with an
+explicit precision. <code>Date/*</code> extracts pieces of the date-vector format;
 <code>Meta/*</code> parses lightweight metadata; <code>Payload/get</code> accesses embedded payload
 text.</p>
 <p>The following names are intentionally low-level: <code>*/raw</code>, <code>*/unchecked!</code>,

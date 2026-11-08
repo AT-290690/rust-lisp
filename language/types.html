@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-782d731f.js";
+            window.path_to_searchindex_js = "../searchindex-d8344352.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -214,6 +214,20 @@ missing one without a sentinel value:</p>
   None 0
   (Some value) value)
 ; 20
+</code></pre>
+<p>For operations that need to report <em>why</em> they failed, use the generic
+<code>(Result T E)</code> enum. <code>Result/ok</code> carries a successful <code>T</code>; <code>Result/err</code>
+carries an error value <code>E</code>:</p>
+<pre><code class="language-que">(let divide
+  (lambda (numerator denominator)
+    (if (= denominator 0)
+      (Result/err "division by zero")
+      (Result/ok (/ numerator denominator)))))
+
+(match (divide 12 3)
+  (Result/ok value) value
+  (Result/err message) 0)
+; 4
 </code></pre>
 <pre><code class="language-que">(let count 3)              ; Int
 (let ready? true)          ; Bool

@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-782d731f.js";
+            window.path_to_searchindex_js = "../searchindex-d8344352.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -319,8 +319,11 @@ kernels.</li>
 <h2 id="specialist-representations"><a class="header" href="#specialist-representations">Specialist representations</a></h2>
 <p><code>BigInt/*</code> implements unsigned arbitrary-precision arithmetic, including
 <code>new</code>, <code>add</code>, <code>sub</code>, <code>mul</code>, <code>div</code>, <code>mod</code>, comparisons, <code>pow</code>, <code>square</code>,
-<code>sum</code>, <code>product</code>, and <code>range</code>. <code>SignedBigInt/*</code> supplies the corresponding
-signed representation. <code>Date/*</code> extracts pieces of the date-vector format;
+<code>sum</code>, <code>product</code>, and <code>range</code>. <code>BigInt</code> is a nominal record around its digit
+storage, so it cannot be confused with an ordinary <code>[Int]</code>. <code>SignedBigInt/*</code>
+supplies the corresponding nominal signed representation, and
+<code>StructBigDec/*</code> supplies arbitrary-precision decimal arithmetic with an
+explicit precision. <code>Date/*</code> extracts pieces of the date-vector format;
 <code>Meta/*</code> parses lightweight metadata; <code>Payload/get</code> accesses embedded payload
 text.</p>
 <p>The following names are intentionally low-level: <code>*/raw</code>, <code>*/unchecked!</code>,
