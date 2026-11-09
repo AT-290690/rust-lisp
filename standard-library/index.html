@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d8344352.js";
+            window.path_to_searchindex_js = "../searchindex-9b0d0dc9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -323,7 +323,10 @@ kernels.</li>
 storage, so it cannot be confused with an ordinary <code>[Int]</code>. <code>SignedBigInt/*</code>
 supplies the corresponding nominal signed representation, and
 <code>StructBigDec/*</code> supplies arbitrary-precision decimal arithmetic with an
-explicit precision. <code>Date/*</code> extracts pieces of the date-vector format;
+explicit precision. <code>BigInt</code> is unsigned: <code>BigInt/sub</code> requires its first
+argument to be at least its second, and <code>div</code>/<code>mod</code> require a nonzero divisor.
+Violating either precondition traps rather than wrapping or manufacturing a
+value. Signed and decimal division likewise trap on a zero divisor. <code>Date/*</code> extracts pieces of the date-vector format;
 <code>Meta/*</code> parses lightweight metadata; <code>Payload/get</code> accesses embedded payload
 text.</p>
 <p>The following names are intentionally low-level: <code>*/raw</code>, <code>*/unchecked!</code>,

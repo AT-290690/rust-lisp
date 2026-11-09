@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d8344352.js";
+            window.path_to_searchindex_js = "../searchindex-9b0d0dc9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -396,6 +396,13 @@ second.</p>
 (let xs [5 1 4 2])
 (Vector/sort! (lambda (a b) (&lt; a b)) xs)
 ; xs is [1 2 4 5]
+</code></pre>
+<p>For a reusable named order, use <code>Ord T</code> and <code>sort/ord</code>:</p>
+<pre><code class="language-que">(sort/ord Ord/Int [5 1 4 2])
+; [1 2 4 5]
+
+(sort/ord Ord/Dec [3.2 1.1 2.4])
+; [1.1 2.4 3.2]
 </code></pre>
 <p><code>unique/int</code> and <code>unique/char</code> remove repeated values for their respective
 element types. <code>group</code> builds a table keyed by a function result:</p>

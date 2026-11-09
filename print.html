@@ -37,7 +37,7 @@
             const path_to_root = "";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "searchindex-d8344352.js";
+            window.path_to_searchindex_js = "searchindex-9b0d0dc9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="toc-214c4c87.js"></script>
@@ -1287,13 +1287,14 @@ in a program, but they have different types: <code>(Option Int)</code> and
 connected to the type of another argument. Calque functions are not overloaded
 by argument type: one function has one type. Put the type-dependent operation
 in a generic enum instead.</p>
-<p>For example, an ordering holds the comparison function for one element type:</p>
+<p>For example, an ordering could use a parameterized enum to choose ascending or
+descending behaviour:</p>
 <pre><code class="language-que">(enum SortOrder T
   (Asc compare (T -&gt; T -&gt; Bool))
   (Desc compare (T -&gt; T -&gt; Bool)))
 
-(sig sort-ord ((SortOrder T) -&gt; [T] -&gt; [T]))
-(let sort-ord
+(sig sort-with-direction ((SortOrder T) -&gt; [T] -&gt; [T]))
+(let sort-with-direction
   (lambda (order values)
     (match order
       (Asc compare) (sort compare values)
@@ -1308,18 +1309,18 @@ in a generic enum instead.</p>
 (sig Asc/Dec (SortOrder Dec))
 (let Asc/Dec (Asc &lt;.))
 
-(sort-ord Asc/Int [3 1 2])
+(sort-with-direction Asc/Int [3 1 2])
 ; [1 2 3]
 
-(sort-ord Desc/Int [3 1 2])
+(sort-with-direction Desc/Int [3 1 2])
 ; [3 2 1]
 
-(sort-ord Asc/Dec [3.2 1.1 2.4])
+(sort-with-direction Asc/Dec [3.2 1.1 2.4])
 ; [1.1 2.4 3.2]
 </code></pre>
-<p><code>sort-ord</code> is one polymorphic function, not separate Int and Dec overloads.
+<p><code>sort-with-direction</code> is one polymorphic function, not separate Int and Dec overloads.
 The signature ties the <code>T</code> inside <code>(SortOrder T)</code> to the element type of
-<code>[T]</code>, so <code>(sort-ord Asc/Int [1.2 2.4])</code> is a type error. The named values
+<code>[T]</code>, so <code>(sort-with-direction Asc/Int [1.2 2.4])</code> is a type error. The named values
 <code>Asc/Int</code> and <code>Asc/Dec</code> are ordinary bindings; an enum variant name does not
 need to encode the concrete type.</p>
 <p>Payload enums are also valid <code>Table</code> keys. Their tag and fields are hashed and
@@ -3026,6 +3027,13 @@ second.</p>
 (Vector/sort! (lambda (a b) (&lt; a b)) xs)
 ; xs is [1 2 4 5]
 </code></pre>
+<p>For a reusable named order, use <code>Ord T</code> and <code>sort/ord</code>:</p>
+<pre><code class="language-que">(sort/ord Ord/Int [5 1 4 2])
+; [1 2 4 5]
+
+(sort/ord Ord/Dec [3.2 1.1 2.4])
+; [1.1 2.4 3.2]
+</code></pre>
 <p><code>unique/int</code> and <code>unique/char</code> remove repeated values for their respective
 element types. <code>group</code> builds a table keyed by a function result:</p>
 <pre><code class="language-que">(group (lambda (x) (% x 2)) [1 2 3 4])
@@ -3333,7 +3341,10 @@ kernels.</li>
 storage, so it cannot be confused with an ordinary <code>[Int]</code>. <code>SignedBigInt/*</code>
 supplies the corresponding nominal signed representation, and
 <code>StructBigDec/*</code> supplies arbitrary-precision decimal arithmetic with an
-explicit precision. <code>Date/*</code> extracts pieces of the date-vector format;
+explicit precision. <code>BigInt</code> is unsigned: <code>BigInt/sub</code> requires its first
+argument to be at least its second, and <code>div</code>/<code>mod</code> require a nonzero divisor.
+Violating either precondition traps rather than wrapping or manufacturing a
+value. Signed and decimal division likewise trap on a zero divisor. <code>Date/*</code> extracts pieces of the date-vector format;
 <code>Meta/*</code> parses lightweight metadata; <code>Payload/get</code> accesses embedded payload
 text.</p>
 <p>The following names are intentionally low-level: <code>*/raw</code>, <code>*/unchecked!</code>,
@@ -3385,6 +3396,25 @@ empty for inputs shorter than two elements.</p>
 comparison predicate that expresses the desired ordering.</p>
 <pre><code class="language-que">(sort (lambda (left right) (&lt; left right)) [5 1 4 2])
 </code></pre>
+<p><code>Ord T</code> packages a reusable comparison for one value type, and <code>sort/ord</code>
+uses it. You do not need a <code>sig</code> to define an order in ordinary code: the
+constructor and its comparison infer together.</p>
+<pre><code class="language-que">(sort/ord Ord/Int [5 1 4 2])
+; [1 2 4 5]
+
+(record Point y Int x Int)
+(let Point/row-major
+  (Ord
+    (lambda (a b)
+      (or (&lt; (Point/y a) (Point/y b))
+          (and (= (Point/y a) (Point/y b))
+               (&lt; (Point/x a) (Point/x b)))))))
+
+(sort/ord Point/row-major [(Point 1 0) (Point 0 4)])
+; [Point{ y 0 x 4 } Point{ y 1 x 0 }]
+</code></pre>
+<p>The ordered collection is simply <code>[Point]</code>; there is no need for a separate
+<code>Points</code> wrapper. <code>Ord/Int</code> and <code>Ord/Dec</code> are the standard ascending orders.</p>
 <p>For allocation-sensitive code, prefer explicit loops and a reserved output
 vector when the result length is known. Pipeline fusion may optimize common
 map/filter/reduce shapes, but clear source invariants remain the first goal.</p>

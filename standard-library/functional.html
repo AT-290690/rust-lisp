@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d8344352.js";
+            window.path_to_searchindex_js = "../searchindex-9b0d0dc9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -224,6 +224,25 @@ empty for inputs shorter than two elements.</p>
 comparison predicate that expresses the desired ordering.</p>
 <pre><code class="language-que">(sort (lambda (left right) (&lt; left right)) [5 1 4 2])
 </code></pre>
+<p><code>Ord T</code> packages a reusable comparison for one value type, and <code>sort/ord</code>
+uses it. You do not need a <code>sig</code> to define an order in ordinary code: the
+constructor and its comparison infer together.</p>
+<pre><code class="language-que">(sort/ord Ord/Int [5 1 4 2])
+; [1 2 4 5]
+
+(record Point y Int x Int)
+(let Point/row-major
+  (Ord
+    (lambda (a b)
+      (or (&lt; (Point/y a) (Point/y b))
+          (and (= (Point/y a) (Point/y b))
+               (&lt; (Point/x a) (Point/x b)))))))
+
+(sort/ord Point/row-major [(Point 1 0) (Point 0 4)])
+; [Point{ y 0 x 4 } Point{ y 1 x 0 }]
+</code></pre>
+<p>The ordered collection is simply <code>[Point]</code>; there is no need for a separate
+<code>Points</code> wrapper. <code>Ord/Int</code> and <code>Ord/Dec</code> are the standard ascending orders.</p>
 <p>For allocation-sensitive code, prefer explicit loops and a reserved output
 vector when the result length is known. Pipeline fusion may optimize common
 map/filter/reduce shapes, but clear source invariants remain the first goal.</p>

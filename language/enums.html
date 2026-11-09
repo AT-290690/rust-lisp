@@ -36,7 +36,7 @@
             const path_to_root = "../";
             const default_light_theme = "navy";
             const default_dark_theme = "navy";
-            window.path_to_searchindex_js = "../searchindex-d8344352.js";
+            window.path_to_searchindex_js = "../searchindex-9b0d0dc9.js";
         </script>
         <!-- Start loading toc.js asap -->
         <script src="../toc-214c4c87.js"></script>
@@ -288,13 +288,14 @@ in a program, but they have different types: <code>(Option Int)</code> and
 connected to the type of another argument. Calque functions are not overloaded
 by argument type: one function has one type. Put the type-dependent operation
 in a generic enum instead.</p>
-<p>For example, an ordering holds the comparison function for one element type:</p>
+<p>For example, an ordering could use a parameterized enum to choose ascending or
+descending behaviour:</p>
 <pre><code class="language-que">(enum SortOrder T
   (Asc compare (T -&gt; T -&gt; Bool))
   (Desc compare (T -&gt; T -&gt; Bool)))
 
-(sig sort-ord ((SortOrder T) -&gt; [T] -&gt; [T]))
-(let sort-ord
+(sig sort-with-direction ((SortOrder T) -&gt; [T] -&gt; [T]))
+(let sort-with-direction
   (lambda (order values)
     (match order
       (Asc compare) (sort compare values)
@@ -309,18 +310,18 @@ in a generic enum instead.</p>
 (sig Asc/Dec (SortOrder Dec))
 (let Asc/Dec (Asc &lt;.))
 
-(sort-ord Asc/Int [3 1 2])
+(sort-with-direction Asc/Int [3 1 2])
 ; [1 2 3]
 
-(sort-ord Desc/Int [3 1 2])
+(sort-with-direction Desc/Int [3 1 2])
 ; [3 2 1]
 
-(sort-ord Asc/Dec [3.2 1.1 2.4])
+(sort-with-direction Asc/Dec [3.2 1.1 2.4])
 ; [1.1 2.4 3.2]
 </code></pre>
-<p><code>sort-ord</code> is one polymorphic function, not separate Int and Dec overloads.
+<p><code>sort-with-direction</code> is one polymorphic function, not separate Int and Dec overloads.
 The signature ties the <code>T</code> inside <code>(SortOrder T)</code> to the element type of
-<code>[T]</code>, so <code>(sort-ord Asc/Int [1.2 2.4])</code> is a type error. The named values
+<code>[T]</code>, so <code>(sort-with-direction Asc/Int [1.2 2.4])</code> is a type error. The named values
 <code>Asc/Int</code> and <code>Asc/Dec</code> are ordinary bindings; an enum variant name does not
 need to encode the concrete type.</p>
 <p>Payload enums are also valid <code>Table</code> keys. Their tag and fields are hashed and
